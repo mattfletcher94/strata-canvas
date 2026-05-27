@@ -1,0 +1,73 @@
+{
+  "name": "@mattfletcher94/strata-canvas",
+  "version": "0.0.0",
+  "description": "Declarative Vue 3 canvas with draggable, resizable, recursively nestable panels. Built on Strata.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mattfletcher94/strata-canvas.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./constraints": {
+      "types": "./dist/constraints/index.d.ts",
+      "import": "./dist/constraints/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js"
+    },
+    "./easing": {
+      "types": "./dist/easing/index.d.ts",
+      "import": "./dist/easing/index.js"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --config playground/vite.config.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "oxlint --fix --fix-dangerously",
+    "format": "oxfmt --write .",
+    "check:circular": "npx dpdm -T --no-warning --exit-code circular:1 ./src/index.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@changesets/changelog-github": "0.6.0",
+    "@changesets/cli": "2.31.0",
+    "@vitejs/plugin-vue": "5.2.4",
+    "@vue/test-utils": "2.4.6",
+    "@vue/tsconfig": "0.9.1",
+    "happy-dom": "18.0.1",
+    "oxfmt": "0.45.0",
+    "oxlint": "1.57.0",
+    "tsx": "4.20.6",
+    "typescript": "6.0.2",
+    "vite": "8.0.9",
+    "vite-plugin-dts": "4.5.4",
+    "vitest": "4.1.4",
+    "vue": "3.5.32",
+    "vue-tsc": "3.1.1"
+  },
+  "peerDependencies": {
+    "vue": ">=3.5"
+  }
+}

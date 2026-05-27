@@ -1,0 +1,2 @@
+export { type AsTag, Primitive, type PrimitiveProps } from "./Primitive";
+export { Slot } from "./Slot";

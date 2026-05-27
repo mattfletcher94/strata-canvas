@@ -1,0 +1,20 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mattfletcher94/strata-canvas": ["../src/index.ts"],
+      "@mattfletcher94/strata-canvas/constraints": ["../src/constraints/index.ts"],
+      "@mattfletcher94/strata-canvas/utils": ["../src/utils/index.ts"],
+      "@mattfletcher94/strata-canvas/controls": ["../src/controls/index.ts"],
+      "@mattfletcher94/strata-canvas/easing": ["../src/easing/index.ts"],
+      "@/*": ["../src/*"],
+      "@mattfletcher94/strata": ["../vendors/strata/index"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.vue"]
+}
