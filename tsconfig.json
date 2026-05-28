@@ -14,8 +14,7 @@
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@mattfletcher94/strata": ["./vendors/strata/index"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "test/**/*.ts"],

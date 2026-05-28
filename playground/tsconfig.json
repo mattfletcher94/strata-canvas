@@ -12,8 +12,7 @@
       "@mattfletcher94/strata-canvas/utils": ["../src/utils/index.ts"],
       "@mattfletcher94/strata-canvas/controls": ["../src/controls/index.ts"],
       "@mattfletcher94/strata-canvas/easing": ["../src/easing/index.ts"],
-      "@/*": ["../src/*"],
-      "@mattfletcher94/strata": ["../vendors/strata/index"]
+      "@/*": ["../src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.vue"]

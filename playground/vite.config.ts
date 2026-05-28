@@ -32,10 +32,7 @@ export default defineConfig({
       },
       // Library's internal @/ alias must resolve when consumed from source.
       { find: "@", replacement: srcRoot },
-      {
-        find: "@mattfletcher94/strata",
-        replacement: path.resolve(__dirname, "../vendors/strata/index.js"),
-      },
+      // @mattfletcher94/strata now resolves from node_modules (public npm).
     ],
   },
   server: { port: 5173, open: true },

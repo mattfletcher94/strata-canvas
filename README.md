@@ -31,7 +31,7 @@ pnpm add @mattfletcher94/strata-canvas
 # or npm / yarn
 ```
 
-Vue 3.5+ is a peer dependency. Strata is vendored â€” no other private packages required.
+Vue 3.5+ is a peer dependency. [Strata](https://www.npmjs.com/package/@mattfletcher94/strata) is a regular dependency, pulled from public npm.
 
 ---
 
@@ -416,4 +416,4 @@ The playground (`playground/`) lives in-repo and aliases the package to `src/` â
 ## Attribution
 
 - Core primitive plumbing (`Primitive`, `Slot`, `createContext`) is adapted from [Reka UI](https://github.com/unovue/reka-ui) (MIT). Originals under [`licenses/reka-ui-LICENSE`](./licenses/reka-ui-LICENSE).
-- Internal state management uses a vendored build of [Strata](https://github.com/mattfletcher94/strata).
+- Internal state management uses [Strata](https://github.com/mattfletcher94/strata) (a public npm dependency).

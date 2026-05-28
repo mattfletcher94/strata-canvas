@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
   "plugins": ["eslint", "typescript", "import"],
-  "ignorePatterns": ["node_modules", "dist", "playground", "vendors"],
+  "ignorePatterns": ["node_modules", "dist", "playground"],
   "categories": {
     "correctness": "error"
   },

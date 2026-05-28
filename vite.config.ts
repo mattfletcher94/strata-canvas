@@ -11,15 +11,11 @@ export default defineConfig({
       outDir: "dist",
       entryRoot: "src",
       exclude: ["test/**"],
-      // Inline vendored strata's types into our .d.ts output so consumers
-      // get a self-contained type surface.
-      bundledPackages: ["@mattfletcher94/strata"],
     }),
   ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@mattfletcher94/strata": path.resolve(__dirname, "./vendors/strata/index.js"),
     },
   },
   build: {
@@ -34,9 +30,9 @@ export default defineConfig({
       formats: ["es"],
     },
     rolldownOptions: {
-      // Strata is bundled into our output; only vue stays external
-      // (consumer's app provides it).
-      external: ["vue"],
+      // Externalised: vue (consumer's app provides it) and strata (a normal
+      // runtime dependency, deduped via the consumer's install).
+      external: ["vue", /^@mattfletcher94\/strata/],
       output: {
         chunkFileNames: "_chunks/[name]-[hash].js",
       },
