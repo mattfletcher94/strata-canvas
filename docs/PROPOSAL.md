@@ -41,7 +41,7 @@ A Vue 3 library for an infinite or finite canvas with draggable, resizable, recu
 
 3. **No sugar (v0).** Every constraint is expressed as a function. No flat-prop sugar for `axis`, `snap`, `aspectRatio`, `minWidth`, `padding`, etc. Sugar is a DX layer to revisit after the function API is locked in.
 
-4. **Compound components, Radix-style.** Every primitive is its own component. Composition in the template *is* the configuration. Handles (drag, resize) are declared as children — presence enables behavior.
+4. **Compound components, Radix-style.** Every primitive is its own component. Composition in the template _is_ the configuration. Handles (drag, resize) are declared as children — presence enables behavior.
 
 5. **Structural composition, no magic strings.** No string IDs as lookup keys. `useCanvas()` and `usePanel()` find their target via inject (nearest ancestor). Cross-panel references happen via refs or scoped slots, not by id.
 
@@ -91,39 +91,40 @@ The Strata graph is created fresh per `createCanvas()` call. Multi-canvas-per-ap
 ## 4. Factory & top-level options
 
 ```ts
-import { createCanvas } from '@mattfletcher94/<name>'
+import { createCanvas } from "@mattfletcher94/<name>";
 
 const Canvas = createCanvas({
-  mode: 'infinite',                              // 'infinite' | 'finite'
-  bounds: { width: 5000, height: 5000 },         // required if mode === 'finite'
+  mode: "infinite", // 'infinite' | 'finite'
+  bounds: { width: 5000, height: 5000 }, // required if mode === 'finite'
 
   zoom: {
     min: 0.1,
     max: 4,
     default: 1,
-    wheel: 'ctrl',                               // 'ctrl' (default) | true | false
+    wheel: "ctrl", // 'ctrl' (default) | true | false
     pinch: true,
   },
 
   pan: {
     enabled: true,
-    activator: 'space',                          // 'space' | 'middle' | 'always' | ('space'|'middle')[]
+    activator: "space", // 'space' | 'middle' | 'always' | ('space'|'middle')[]
   },
 
-  dragActivation: { distance: 4 },               // px before drag starts (prevents accidental drag-on-click)
+  dragActivation: { distance: 4 }, // px before drag starts (prevents accidental drag-on-click)
 
   selection: {
-    boxSelect: true,                             // bare drag on empty canvas = box select
+    boxSelect: true, // bare drag on empty canvas = box select
     bringToFrontOnSelect: true,
   },
 
-  classNames: {                                  // optional rename for escape-hatch classes
-    nodrag: 'canvas-nodrag',
-    nopan:  'canvas-nopan',
-    nowheel:'canvas-nowheel',
-    noselect:'canvas-noselect',
+  classNames: {
+    // optional rename for escape-hatch classes
+    nodrag: "canvas-nodrag",
+    nopan: "canvas-nopan",
+    nowheel: "canvas-nowheel",
+    noselect: "canvas-noselect",
   },
-})
+});
 ```
 
 `Canvas` is a frozen object containing the namespaced components and the typed composables. It also internally holds the Strata graph instance.
@@ -133,6 +134,7 @@ const Canvas = createCanvas({
 ## 5. Primitives (compound components)
 
 All primitives support:
+
 - `as` prop — render a different element (e.g. `as="section"`)
 - `as-child` prop — merge listeners/refs/data-attrs into the single child element instead of rendering a wrapper
 - Scoped slot exposing component state (e.g. `{ active, hover }`)
@@ -149,11 +151,11 @@ The viewport. Provides `CanvasContext`. Owns pan/zoom gestures.
 </Canvas.Root>
 ```
 
-| Prop | Type | Default |
-|---|---|---|
-| `v-model:viewport` | `Ref<{ x, y, zoom }>` | uncontrolled OK |
-| `v-model:selection` | `Ref<PanelHandle[]>` | uncontrolled OK |
-| `as` / `as-child` | element/component | `<div>` |
+| Prop                | Type                  | Default         |
+| ------------------- | --------------------- | --------------- |
+| `v-model:viewport`  | `Ref<{ x, y, zoom }>` | uncontrolled OK |
+| `v-model:selection` | `Ref<PanelHandle[]>`  | uncontrolled OK |
+| `as` / `as-child`   | element/component     | `<div>`         |
 
 ### 5.2 `<Canvas.Background>`
 
@@ -185,27 +187,27 @@ The core primitive. Reads its state from `v-model` on `{ x, y, width, height }`.
 
 #### Props
 
-| Prop | Type | Default |
-|---|---|---|
-| `v-model` | `Ref<Box>` | required |
-| `bounds` | `Rect \| Ref<Rect> \| ((ctx) => Rect)` | none |
-| `resolve` | `ResolveFn` | none |
-| `selectable` | `boolean` | `true` |
-| `disabled` | `boolean` | `false` (overrides all gestures) |
-| `z` | `number` | document order |
-| `as` / `as-child` | element/component | `<div>` |
+| Prop              | Type                                   | Default                          |
+| ----------------- | -------------------------------------- | -------------------------------- |
+| `v-model`         | `Ref<Box>`                             | required                         |
+| `bounds`          | `Rect \| Ref<Rect> \| ((ctx) => Rect)` | none                             |
+| `resolve`         | `ResolveFn`                            | none                             |
+| `selectable`      | `boolean`                              | `true`                           |
+| `disabled`        | `boolean`                              | `false` (overrides all gestures) |
+| `z`               | `number`                               | document order                   |
+| `as` / `as-child` | element/component                      | `<div>`                          |
 
 #### Emits
 
-| Event | Payload | When |
-|---|---|---|
-| `update:modelValue` | `Box` | Every gesture frame + reactive consistency re-clamps |
-| `drag-start` | `{ box, pointer }` | Drag activation threshold crossed |
-| `drag-end` | `{ box }` | Drag pointer released |
-| `resize-start` | `{ box, handle }` | Resize gesture begins |
-| `resize-end` | `{ box, handle }` | Resize gesture ends |
-| `select` | `{ additive: boolean }` | Panel selected via click |
-| `reparent` | `{ newParent: PanelHandle \| null }` | Drag-into-different-parent (consumer mutates their tree) |
+| Event               | Payload                              | When                                                     |
+| ------------------- | ------------------------------------ | -------------------------------------------------------- |
+| `update:modelValue` | `Box`                                | Every gesture frame + reactive consistency re-clamps     |
+| `drag-start`        | `{ box, pointer }`                   | Drag activation threshold crossed                        |
+| `drag-end`          | `{ box }`                            | Drag pointer released                                    |
+| `resize-start`      | `{ box, handle }`                    | Resize gesture begins                                    |
+| `resize-end`        | `{ box, handle }`                    | Resize gesture ends                                      |
+| `select`            | `{ additive: boolean }`              | Panel selected via click                                 |
+| `reparent`          | `{ newParent: PanelHandle \| null }` | Drag-into-different-parent (consumer mutates their tree) |
 
 #### Behavior is declared by children
 
@@ -220,17 +222,19 @@ A `<Canvas.Panel>` with no children is **inert** — no drag, no resize. Behavio
 When pointerdown lands on this element, the nearest ancestor `<Canvas.Panel>` begins drag.
 
 ```vue
-<Canvas.DragHandle />                            <!-- default <div>, fills nothing -->
-<Canvas.DragHandle as="button" />                <!-- as a button -->
+<Canvas.DragHandle />
+<!-- default <div>, fills nothing -->
+<Canvas.DragHandle as="button" />
+<!-- as a button -->
 <Canvas.DragHandle as-child>
   <header class="title-bar">My Panel</header>    <!-- merges into the header -->
 </Canvas.DragHandle>
 ```
 
-| Prop | Type | Default |
-|---|---|---|
-| `as` | element/component | `<div>` |
-| `as-child` | boolean | `false` |
+| Prop       | Type              | Default |
+| ---------- | ----------------- | ------- |
+| `as`       | element/component | `<div>` |
+| `as-child` | boolean           | `false` |
 
 Scoped slot exposes `{ active: boolean, hover: boolean }`. `data-canvas-drag-handle` + `data-active` attributes are emitted for CSS targeting.
 
@@ -247,10 +251,10 @@ Eight components, one per position. Same shape as `DragHandle`; binds to its pos
 </Canvas.ResizeHandleNW>
 ```
 
-| Prop | Type | Default |
-|---|---|---|
-| `as` | element/component | `<div>` |
-| `as-child` | boolean | `false` |
+| Prop       | Type              | Default |
+| ---------- | ----------------- | ------- |
+| `as`       | element/component | `<div>` |
+| `as-child` | boolean           | `false` |
 
 Slot scope: `{ active, hover }`. Data attrs: `data-canvas-resize-handle="se"`, `data-active`.
 
@@ -266,14 +270,14 @@ Marks a subtree as opaque to canvas-level gestures. Used when defaults aren't en
 </Canvas.PassThrough>
 ```
 
-| Prop | Type | Default |
-|---|---|---|
-| `pan` | boolean | `true` |
-| `zoom` | boolean | `true` |
-| `wheel` | boolean | `true` |
-| `drag` | boolean | `true` |
-| `select` | boolean | `true` |
-| `as` / `as-child` | | `<div>` |
+| Prop              | Type    | Default |
+| ----------------- | ------- | ------- |
+| `pan`             | boolean | `true`  |
+| `zoom`            | boolean | `true`  |
+| `wheel`           | boolean | `true`  |
+| `drag`            | boolean | `true`  |
+| `select`          | boolean | `true`  |
+| `as` / `as-child` |         | `<div>` |
 
 Equivalent low-level escape: any element with `class="canvas-nopan canvas-nowheel canvas-nodrag"` (class names configurable on `createCanvas`).
 
@@ -295,25 +299,25 @@ Returns the nearest `<Canvas.Root>` context.
 ```ts
 interface CanvasContext {
   // reactive viewport state (mirrors v-model on Root)
-  viewport: Ref<{ x: number; y: number; zoom: number }>
-  bounds: Ref<Rect | null>
-  mode: 'infinite' | 'finite'
-  selection: Ref<PanelHandle[]>
+  viewport: Ref<{ x: number; y: number; zoom: number }>;
+  bounds: Ref<Rect | null>;
+  mode: "infinite" | "finite";
+  selection: Ref<PanelHandle[]>;
 
   // imperative ops
-  pan(dx: number, dy: number): void
-  zoomTo(z: number, opts?: { around?: Point }): void
-  fitTo(targets?: 'all' | PanelHandle[], opts?: { padding?: number }): void
-  screenToWorld(p: Point): Point
-  worldToScreen(p: Point): Point
+  pan(dx: number, dy: number): void;
+  zoomTo(z: number, opts?: { around?: Point }): void;
+  fitTo(targets?: "all" | PanelHandle[], opts?: { padding?: number }): void;
+  screenToWorld(p: Point): Point;
+  worldToScreen(p: Point): Point;
 
   // gesture cooperation (tldraw pattern; better than e.stopPropagation())
-  markEventAsHandled(e: Event): void
-  isHandled(e: Event): boolean
+  markEventAsHandled(e: Event): void;
+  isHandled(e: Event): boolean;
 
   // selection
-  select(panel: PanelHandle, opts?: { additive?: boolean }): void
-  clearSelection(): void
+  select(panel: PanelHandle, opts?: { additive?: boolean }): void;
+  clearSelection(): void;
 }
 ```
 
@@ -324,22 +328,22 @@ Returns the nearest ancestor `<Canvas.Panel>` context. Used by `<Canvas.DragHand
 ```ts
 interface PanelContext {
   // reactive state (sourced from the panel's v-model)
-  state: Ref<Box>                 // { x, y, width, height } in parent-local coords
-  worldPosition: Ref<Point>       // computed by walking parent chain
-  parent: PanelContext | null     // nearest ancestor panel (null at root level)
-  children: Ref<PanelContext[]>   // immediate child panels
+  state: Ref<Box>; // { x, y, width, height } in parent-local coords
+  worldPosition: Ref<Point>; // computed by walking parent chain
+  parent: PanelContext | null; // nearest ancestor panel (null at root level)
+  children: Ref<PanelContext[]>; // immediate child panels
 
   // gesture lifecycle
-  isDragging: Ref<boolean>
-  isResizing: Ref<boolean>
-  isSelected: Ref<boolean>
+  isDragging: Ref<boolean>;
+  isResizing: Ref<boolean>;
+  isSelected: Ref<boolean>;
 
   // imperative ops
-  update(patch: Partial<Box>): void          // dispatches v-model update
-  select(opts?: { additive?: boolean }): void
-  bringToFront(): void
-  sendToBack(): void
-  animateTo(target: Partial<Box>, opts?: { duration?: number; easing?: string }): Promise<void>
+  update(patch: Partial<Box>): void; // dispatches v-model update
+  select(opts?: { additive?: boolean }): void;
+  bringToFront(): void;
+  sendToBack(): void;
+  animateTo(target: Partial<Box>, opts?: { duration?: number; easing?: string }): Promise<void>;
 }
 ```
 
@@ -353,7 +357,7 @@ interface PanelContext {
 
 ```vue
 <script setup lang="ts">
-const panel = ref<Box>({ x: 100, y: 100, width: 200, height: 120 })
+const panel = ref<Box>({ x: 100, y: 100, width: 200, height: 120 });
 </script>
 
 <template>
@@ -362,6 +366,7 @@ const panel = ref<Box>({ x: 100, y: 100, width: 200, height: 120 })
 ```
 
 The library reads `panel` via the `modelValue` prop and emits `update:modelValue` on:
+
 - Every gesture frame (drag, resize)
 - Reactive consistency re-clamps (e.g., parent shrinks, child must re-clamp to bounds)
 
@@ -372,19 +377,26 @@ The consumer's ref is the single source of truth. No internal library copy.
 The library reads parent/child structure from the **rendered component tree**, not from a `parentId` data field. Two natural data shapes for many-panel scenarios:
 
 **Nested arrays (recommended):**
+
 ```ts
 const tree = ref([
-  { id: 'a', x: 100, y: 100, width: 300, height: 200, children: [
-    { id: 'a.1', x: 10, y: 10, width: 80, height: 50, children: [] }
-  ]},
-])
+  {
+    id: "a",
+    x: 100,
+    y: 100,
+    width: 300,
+    height: 200,
+    children: [{ id: "a.1", x: 10, y: 10, width: 80, height: 50, children: [] }],
+  },
+]);
 ```
 
 Recursive component:
+
 ```vue
 <!-- PanelTree.vue -->
 <script setup lang="ts">
-defineProps<{ panel: PanelData }>()
+defineProps<{ panel: PanelData }>();
 </script>
 
 <template>
@@ -416,6 +428,7 @@ watch(panels, save, { deep: true })
 ### Reactive constraint consistency
 
 When ancestor state changes such that a descendant's current box violates its declared `bounds` or `resolve`:
+
 - Library emits `update:modelValue` to re-clamp the descendant
 - Cascades resolved in document order within a single reactive tick
 - Policy: **child-specific constraints win over inherited ones** (a child's `:min-width` holds even if parent shrinks below it; child overflows parent visually)
@@ -429,11 +442,11 @@ When ancestor state changes such that a descendant's current box violates its de
 
 ```ts
 interface PanelProps {
-  bounds?:  Rect | Ref<Rect> | ((ctx: ResolveCtx) => Rect)
-  resolve?: ResolveFn
+  bounds?: Rect | Ref<Rect> | ((ctx: ResolveCtx) => Rect);
+  resolve?: ResolveFn;
 }
 
-type ResolveFn = (proposed: Box, ctx: ResolveCtx) => Box
+type ResolveFn = (proposed: Box, ctx: ResolveCtx) => Box;
 ```
 
 ### Pipeline order
@@ -451,25 +464,37 @@ Two steps. No built-in axis/snap/aspect-ratio/size-clamp stages — all of those
 
 ```ts
 interface ResolveCtx {
-  current: Box                          // panel's box at start of this frame
-  bounds: Rect | null                   // resolved from `bounds` prop, if any
-  parent: PanelInfo | null              // nearest ancestor panel (live state)
-  siblings: PanelInfo[]                 // immediate siblings (live state)
-  viewport: Rect                        // current viewport
-  pointer: { x: number; y: number }     // current pointer in world coords
-  modifiers: { ctrl: boolean; shift: boolean; alt: boolean; meta: boolean }
-  gesture: 'drag' | 'resize'
-  handle?: 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'   // resize only
+  current: Box; // panel's box at start of this frame
+  bounds: Rect | null; // resolved from `bounds` prop, if any
+  parent: PanelInfo | null; // nearest ancestor panel (live state)
+  siblings: PanelInfo[]; // immediate siblings (live state)
+  viewport: Rect; // current viewport
+  pointer: { x: number; y: number }; // current pointer in world coords
+  modifiers: { ctrl: boolean; shift: boolean; alt: boolean; meta: boolean };
+  gesture: "drag" | "resize";
+  handle?: "n" | "e" | "s" | "w" | "ne" | "nw" | "se" | "sw"; // resize only
 }
 
 interface PanelInfo {
-  id: string                            // auto or consumer-provided
-  x: number; y: number
-  width: number; height: number
+  id: string; // auto or consumer-provided
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
-interface Box { x: number; y: number; width: number; height: number }
-interface Rect { minX: number; minY: number; maxX: number; maxY: number }
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+interface Rect {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
 ```
 
 ### Library exports — `/constraints`
@@ -561,13 +586,13 @@ const composed = compose(restrictToParent, snapToGrid(10), dontCrossDiagonal)
 
 ### Defaults table
 
-| Concern | Default | Effect |
-|---|---|---|
-| Drag activation threshold | `4px` | Click inside a panel doesn't accidentally drag it |
-| Pan trigger | Space+drag (or middle-mouse) | Bare pointerdown inside content never pans |
-| Zoom trigger | Ctrl/Cmd+wheel (or pinch) | Bare wheel inside content scrolls naturally |
-| Box-select | Bare drag on empty canvas | Doesn't compete with panning |
-| Keyboard | Active-element check on all listeners | Space inside `<input>` types a space |
+| Concern                   | Default                               | Effect                                            |
+| ------------------------- | ------------------------------------- | ------------------------------------------------- |
+| Drag activation threshold | `4px`                                 | Click inside a panel doesn't accidentally drag it |
+| Pan trigger               | Space+drag (or middle-mouse)          | Bare pointerdown inside content never pans        |
+| Zoom trigger              | Ctrl/Cmd+wheel (or pinch)             | Bare wheel inside content scrolls naturally       |
+| Box-select                | Bare drag on empty canvas             | Doesn't compete with panning                      |
+| Keyboard                  | Active-element check on all listeners | Space inside `<input>` types a space              |
 
 ### Drag
 
@@ -613,6 +638,7 @@ Three coexisting forms, in order of reach-for:
 ```
 
 Recognized class names:
+
 - `canvas-nodrag` — pointerdown won't start panel drag
 - `canvas-nopan` — won't pan canvas
 - `canvas-nowheel` — won't zoom canvas
@@ -636,7 +662,7 @@ For custom pointer handlers in consumer code:
 
 ```ts
 function onMyClick(e: PointerEvent) {
-  canvas.markEventAsHandled(e)
+  canvas.markEventAsHandled(e);
   // ... your logic
 }
 ```
@@ -652,15 +678,15 @@ Following Reka UI's `createContext` pattern:
 ```ts
 function createContext<T>(displayName: string): [
   provide: (value: T) => T,
-  inject: () => T,                       // throws if used outside provider
+  inject: () => T, // throws if used outside provider
   injectOptional: () => T | null,
-]
+];
 
 const [provideCanvasContext, injectCanvasContext, tryCanvasContext] =
-  createContext<CanvasContext>('CanvasContext')
+  createContext<CanvasContext>("CanvasContext");
 
 const [providePanelContext, injectPanelContext, tryPanelContext] =
-  createContext<PanelContext>('PanelContext')
+  createContext<PanelContext>("PanelContext");
 ```
 
 - `<Canvas.Root>` provides `CanvasContext`
@@ -688,43 +714,64 @@ Attribution lives at the top of each copied file. No runtime dependency on Reka 
 
 ```ts
 // Core shapes
-interface Box { x: number; y: number; width: number; height: number }
-interface Rect { minX: number; minY: number; maxX: number; maxY: number }
-interface Point { x: number; y: number }
-type HandlePosition = 'n' | 'e' | 's' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+interface Rect {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+interface Point {
+  x: number;
+  y: number;
+}
+type HandlePosition = "n" | "e" | "s" | "w" | "ne" | "nw" | "se" | "sw";
 
 // Constraint pipeline
-type ResolveFn = (proposed: Box, ctx: ResolveCtx) => Box
-type BoundsFn  = (ctx: ResolveCtx) => Rect
-type BoundsValue = Rect | Ref<Rect> | BoundsFn
+type ResolveFn = (proposed: Box, ctx: ResolveCtx) => Box;
+type BoundsFn = (ctx: ResolveCtx) => Rect;
+type BoundsValue = Rect | Ref<Rect> | BoundsFn;
 
-interface ResolveCtx { /* see §8 */ }
-interface PanelInfo  { /* see §8 */ }
+interface ResolveCtx {
+  /* see §8 */
+}
+interface PanelInfo {
+  /* see §8 */
+}
 
 // Public context types
-interface CanvasContext { /* see §6.1 */ }
-interface PanelContext  { /* see §6.2 */ }
+interface CanvasContext {
+  /* see §6.1 */
+}
+interface PanelContext {
+  /* see §6.2 */
+}
 
 // Panel handle (for selection arrays and cross-panel refs)
-type PanelHandle = PanelContext           // alias; PanelContext is the handle
+type PanelHandle = PanelContext; // alias; PanelContext is the handle
 
 // Factory return type
 interface CanvasNamespace {
-  Root: Component
-  Background: Component
-  Panel: Component
-  DragHandle: Component
-  ResizeHandleN: Component
-  ResizeHandleE: Component
-  ResizeHandleS: Component
-  ResizeHandleW: Component
-  ResizeHandleNE: Component
-  ResizeHandleNW: Component
-  ResizeHandleSE: Component
-  ResizeHandleSW: Component
-  PassThrough: Component
-  useCanvas: () => CanvasContext
-  usePanel: () => PanelContext
+  Root: Component;
+  Background: Component;
+  Panel: Component;
+  DragHandle: Component;
+  ResizeHandleN: Component;
+  ResizeHandleE: Component;
+  ResizeHandleS: Component;
+  ResizeHandleW: Component;
+  ResizeHandleNE: Component;
+  ResizeHandleNW: Component;
+  ResizeHandleSE: Component;
+  ResizeHandleSW: Component;
+  PassThrough: Component;
+  useCanvas: () => CanvasContext;
+  usePanel: () => PanelContext;
 }
 ```
 
@@ -734,49 +781,52 @@ interface CanvasNamespace {
 
 ```vue
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { createCanvas } from '@mattfletcher94/<name>'
+import { ref, computed } from "vue";
+import { createCanvas } from "@mattfletcher94/<name>";
 import {
-  restrictToParent, withPadding, snapToGrid, avoidRect, withAspectRatio,
-  withMinSize, compose,
-} from '@mattfletcher94/<name>/constraints'
-import type { Box, Rect, ResolveFn } from '@mattfletcher94/<name>'
+  restrictToParent,
+  withPadding,
+  snapToGrid,
+  avoidRect,
+  withAspectRatio,
+  withMinSize,
+  compose,
+} from "@mattfletcher94/<name>/constraints";
+import type { Box, Rect, ResolveFn } from "@mattfletcher94/<name>";
 
 const Canvas = createCanvas({
-  mode: 'infinite',
-  zoom: { min: 0.1, max: 4, wheel: 'ctrl' },
-  pan:  { activator: 'space' },
-})
+  mode: "infinite",
+  zoom: { min: 0.1, max: 4, wheel: "ctrl" },
+  pan: { activator: "space" },
+});
 
-const viewport = ref({ x: 0, y: 0, zoom: 1 })
+const viewport = ref({ x: 0, y: 0, zoom: 1 });
 
 // Three top-level panels with different behaviors
-const parent  = ref<Box>({ x: 100, y: 100, width: 400, height: 300 })
-const child   = ref<Box>({ x: 20,  y: 20,  width: 80,  height: 80  })
-const image   = ref<Box>({ x: 200, y: 200, width: 150, height: 100 })
+const parent = ref<Box>({ x: 100, y: 100, width: 400, height: 300 });
+const child = ref<Box>({ x: 20, y: 20, width: 80, height: 80 });
+const image = ref<Box>({ x: 200, y: 200, width: 150, height: 100 });
 
 const forbidden = computed<Rect>(() => ({
-  minX: parent.value.width / 2, minY: 0,
-  maxX: parent.value.width,     maxY: parent.value.height / 2,
-}))
+  minX: parent.value.width / 2,
+  minY: 0,
+  maxX: parent.value.width,
+  maxY: parent.value.height / 2,
+}));
 
-const childResolve = compose(
-  restrictToParent,
-  withPadding(10),
-  avoidRect(forbidden),
-)
+const childResolve = compose(restrictToParent, withPadding(10), avoidRect(forbidden));
 
 const imageResolve = compose(
-  withAspectRatio('lock'),
+  withAspectRatio("lock"),
   withMinSize({ width: 100, height: 50 }),
   snapToGrid(8),
-)
+);
 
 function saveAll() {
   // persist whenever state changes
 }
 
-watch([parent, child, image], saveAll, { deep: true })
+watch([parent, child, image], saveAll, { deep: true });
 </script>
 
 <template>

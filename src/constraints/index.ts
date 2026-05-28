@@ -1,4 +1,4 @@
-import type { BoundsFn, Box, Rect, ResolveCtx, ResolveFn, ResolveResult } from "@/types";
+import type { BoundsFn, Box, Rect, ResolveCtx, ResolveFn } from "@/types";
 import {
   anchorOf,
   boxToRect,
@@ -97,9 +97,7 @@ export function restrictToRect(rect: Rect | { value: Rect } | BoundsFn): Resolve
 export function lockAxis(axis: "x" | "y"): ResolveFn {
   return (proposed, ctx) => {
     if (ctx.gesture !== "drag") return proposed;
-    return axis === "x"
-      ? { ...proposed, y: ctx.current.y }
-      : { ...proposed, x: ctx.current.x };
+    return axis === "x" ? { ...proposed, y: ctx.current.y } : { ...proposed, x: ctx.current.x };
   };
 }
 

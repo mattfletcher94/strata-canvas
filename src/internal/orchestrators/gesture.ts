@@ -5,10 +5,18 @@ import {
   type Resolved,
 } from "@mattfletcher94/strata";
 import type { Box, HandlePosition, KeyboardModifiers, Point } from "@/types";
+import type { DragMember } from "@/internal/stores/gestures";
 import { gesturesStore } from "@/internal/stores/gestures";
 import { registryStore } from "@/internal/stores/registry";
+import { selectionStore } from "@/internal/stores/selection";
 import { viewportStore } from "@/internal/stores/viewport";
 import { pointerService } from "@/internal/services/pointer";
+
+function newCorrId(): string {
+  return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `g-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 interface GestureServices {
   readonly pointer: Resolved<typeof pointerService>;
@@ -17,7 +25,12 @@ interface GestureServices {
 export const gestureOrch = defineOrchestrator({
   name: "gestureOrch",
   responsibility: "Active drag/resize/pan gesture state machines.",
-  deps: { gestures: gesturesStore, registry: registryStore, viewport: viewportStore },
+  deps: {
+    gestures: gesturesStore,
+    registry: registryStore,
+    selection: selectionStore,
+    viewport: viewportStore,
+  },
   services: { pointer: pointerService },
   queries: (deps) => ({
     activeDrag: () => deps.gestures.activeDrag(),
@@ -34,20 +47,49 @@ export const gestureOrch = defineOrchestrator({
     beginDrag(input: { panelId: string; pointer: Point; modifiers: KeyboardModifiers }) {
       const panel = deps.registry.byId(input.panelId)();
       if (!panel) return;
-      const startBox: Box = { x: panel.x, y: panel.y, width: panel.width, height: panel.height };
+
+      // Group drag: if the grabbed panel is part of a multi-selection, every
+      // selected panel moves. Otherwise just the grabbed one.
+      const selected = deps.selection.selectedIds();
+      const baseIds =
+        selected.includes(input.panelId) && selected.length > 1 ? selected : [input.panelId];
+      const selectedSet = new Set(baseIds);
+
+      // Exclude panels that have a selected ancestor — they ride along via the
+      // ancestor's move, so moving them too would double their displacement.
+      const members: Record<string, DragMember> = {};
+      for (const gid of baseIds) {
+        let pid = deps.registry.byId(gid)()?.parentId ?? null;
+        let ridesAncestor = false;
+        while (pid !== null) {
+          if (selectedSet.has(pid)) {
+            ridesAncestor = true;
+            break;
+          }
+          pid = deps.registry.byId(pid)()?.parentId ?? null;
+        }
+        if (ridesAncestor) continue;
+        const r = deps.registry.byId(gid)();
+        if (!r) continue;
+        const box: Box = { x: r.x, y: r.y, width: r.width, height: r.height };
+        members[gid] = { startBox: box, rawProposed: box };
+      }
+      // Fallback: ensure the grabbed panel always moves even if it wasn't
+      // selectable / not in the selection set.
+      if (Object.keys(members).length === 0) {
+        const box: Box = { x: panel.x, y: panel.y, width: panel.width, height: panel.height };
+        members[input.panelId] = { startBox: box, rawProposed: box };
+      }
+
       return {
         events: [
           deps.gestures.dragBegun({
-            corrId:
-              typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-                ? crypto.randomUUID()
-                : `g-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+            corrId: newCorrId(),
             panelId: input.panelId,
             startPointer: input.pointer,
             currentPointer: input.pointer,
             modifiers: input.modifiers,
-            startBox,
-            rawProposed: startBox,
+            members,
           }),
         ],
       };
@@ -64,10 +106,7 @@ export const gestureOrch = defineOrchestrator({
       return {
         events: [
           deps.gestures.resizeBegun({
-            corrId:
-              typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-                ? crypto.randomUUID()
-                : `g-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+            corrId: newCorrId(),
             panelId: input.panelId,
             handle: input.handle,
             startPointer: input.pointer,
@@ -83,10 +122,7 @@ export const gestureOrch = defineOrchestrator({
       return {
         events: [
           deps.gestures.panBegun({
-            corrId:
-              typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-                ? crypto.randomUUID()
-                : `g-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+            corrId: newCorrId(),
             startScreenPointer: input.screenPointer,
             currentScreenPointer: input.screenPointer,
             startViewport: { x: deps.viewport.x(), y: deps.viewport.y() },
@@ -117,17 +153,22 @@ export const gestureOrch = defineOrchestrator({
             const zoom = deps.viewport.zoom();
             const dx = (e.screenPointer.x - drag.startPointer.x) / zoom;
             const dy = (e.screenPointer.y - drag.startPointer.y) / zoom;
+            const proposals: Record<string, Box> = {};
+            for (const id in drag.members) {
+              const startBox = drag.members[id].startBox;
+              proposals[id] = {
+                x: startBox.x + dx,
+                y: startBox.y + dy,
+                width: startBox.width,
+                height: startBox.height,
+              };
+            }
             events.push(
               deps.gestures.dragAdvanced({
                 corrId: drag.corrId,
                 currentPointer: e.screenPointer,
                 modifiers: e.modifiers,
-                rawProposed: {
-                  x: drag.startBox.x + dx,
-                  y: drag.startBox.y + dy,
-                  width: drag.startBox.width,
-                  height: drag.startBox.height,
-                },
+                proposals,
               }),
             );
           }

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { createCanvas } from "@/index";
 import { clampBox, insetRect, rectsOverlap } from "@/utils";
 import { compose, restrictToParent, withPadding } from "@/constraints";
+import type { Box, ResolveResult } from "@/types";
+
+/** Unwrap a ResolveResult (Box | { box, bounds }) to its Box. */
+function boxOf(r: ResolveResult): Box {
+  return "box" in r ? r.box : r;
+}
 
 describe("public API smoke", () => {
   it("createCanvas returns a frozen namespace with all primitives", () => {
@@ -48,22 +54,27 @@ describe("compose", () => {
   });
 
   it("threads box through fns left-to-right", () => {
-    const a = (b: { x: number; y: number; width: number; height: number }) => ({ ...b, x: b.x + 1 });
+    const a = (b: { x: number; y: number; width: number; height: number }) => ({
+      ...b,
+      x: b.x + 1,
+    });
     const c = compose(a, a, a);
     const box = { x: 0, y: 0, width: 10, height: 10 };
-    expect(c(box, fakeCtx()).x).toBe(3);
+    expect(boxOf(c(box, fakeCtx())).x).toBe(3);
   });
 
   it("restrictToParent + withPadding works as a chain", () => {
     const ctx = fakeCtx({ parent: { id: "p", x: 0, y: 0, width: 100, height: 100 } });
     const r = compose(restrictToParent, withPadding(10));
     const box = { x: 95, y: 0, width: 20, height: 20 };
-    const out = r(box, ctx);
+    const out = boxOf(r(box, ctx));
     expect(out.x).toBe(70);
   });
 });
 
-function fakeCtx(overrides: Partial<import("@/types").ResolveCtx> = {}): import("@/types").ResolveCtx {
+function fakeCtx(
+  overrides: Partial<import("@/types").ResolveCtx> = {},
+): import("@/types").ResolveCtx {
   return {
     current: { x: 0, y: 0, width: 10, height: 10 },
     bounds: null,

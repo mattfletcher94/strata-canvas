@@ -54,9 +54,12 @@ export const viewportOrch = defineOrchestrator({
           : Array.isArray(input.ids)
             ? input.ids
             : null;
-      const panels = ids === null ? deps.registry.panelsList() : ids
-        .map((id) => deps.registry.byId(id)())
-        .filter((p): p is NonNullable<typeof p> => p !== null);
+      const panels =
+        ids === null
+          ? deps.registry.panelsList()
+          : ids
+              .map((id) => deps.registry.byId(id)())
+              .filter((p): p is NonNullable<typeof p> => p !== null);
       if (panels.length === 0) return;
       let minX = Infinity;
       let minY = Infinity;

@@ -40,10 +40,7 @@ export const viewportStore = defineStore({
       x: state.x + dx,
       y: state.y + dy,
     }),
-    viewportZoomed: (
-      state,
-      { zoom, around }: { zoom: number; around?: Point },
-    ) => {
+    viewportZoomed: (state, { zoom, around }: { zoom: number; around?: Point }) => {
       const clamped = Math.max(state.config.zoom.min, Math.min(state.config.zoom.max, zoom));
       if (!around) return { ...state, zoom: clamped };
       // `around` is in WORLD coords. Keep that world point pinned to the
@@ -57,10 +54,7 @@ export const viewportStore = defineStore({
         y: state.y + around.y * (state.zoom - clamped),
       };
     },
-    viewportConfigured: (
-      state,
-      { config }: { config: Partial<ViewportConfig> },
-    ) => ({
+    viewportConfigured: (state, { config }: { config: Partial<ViewportConfig> }) => ({
       ...state,
       config: {
         ...state.config,
@@ -68,10 +62,12 @@ export const viewportStore = defineStore({
         zoom: { ...state.config.zoom, ...(config.zoom ?? {}) },
       },
     }),
-    viewportSet: (
-      state,
-      { x, y, zoom }: { x: number; y: number; zoom: number },
-    ) => ({ ...state, x, y, zoom }),
+    viewportSet: (state, { x, y, zoom }: { x: number; y: number; zoom: number }) => ({
+      ...state,
+      x,
+      y,
+      zoom,
+    }),
     viewportModeChanged: (
       state,
       { mode, bounds }: { mode: ViewportMode; bounds: Rect | null },

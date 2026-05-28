@@ -32,12 +32,7 @@ export function resolveEasing(input: EasingName | EasingFn): EasingFn {
  *
  * Solves x(t) = u for t via bisection, then returns y(t).
  */
-export function cubicBezier(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-): EasingFn {
+export function cubicBezier(x1: number, y1: number, x2: number, y2: number): EasingFn {
   const sample = (a: number, b: number, t: number) =>
     3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t;
   return (x: number) => {

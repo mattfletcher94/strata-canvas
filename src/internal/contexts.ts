@@ -12,7 +12,12 @@ export interface ViewportState {
 
 export type Padding =
   | number
-  | { readonly top: number; readonly right: number; readonly bottom: number; readonly left: number };
+  | {
+      readonly top: number;
+      readonly right: number;
+      readonly bottom: number;
+      readonly left: number;
+    };
 
 export interface AnimateOptions {
   /** Animation duration in ms. 0 = instant (no animation). Default 0. */
@@ -34,12 +39,7 @@ export interface FitOptions extends AnimateOptions {
   readonly maxZoom?: number;
 }
 
-export type FitTarget =
-  | "all"
-  | PanelContext
-  | readonly PanelContext[]
-  | Rect
-  | (() => Rect);
+export type FitTarget = "all" | PanelContext | readonly PanelContext[] | Rect | (() => Rect);
 
 export type CenterTarget = PanelContext | Point | Rect;
 
@@ -74,6 +74,17 @@ export interface CanvasContext {
   deselect(id: string): void;
   clearSelection(): void;
   setSelection(ids: readonly string[]): void;
+  /**
+   * Whether a pointer event carries the additive-selection modifier configured
+   * on the `select()` control (default shift). Used internally by panels so
+   * drag/resize-begin selection honours the same modifier as body clicks.
+   */
+  isAdditiveSelectEvent(e: {
+    ctrlKey: boolean;
+    metaKey: boolean;
+    altKey: boolean;
+    shiftKey: boolean;
+  }): boolean;
 
   // Gesture cooperation (tldraw-style)
   markEventAsHandled(e: Event): void;

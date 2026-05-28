@@ -1,7 +1,9 @@
 import type { SubscribableQuery } from "@mattfletcher94/strata";
 import { onBeforeUnmount, type Ref, shallowRef, watch } from "vue";
 
-function isQuery<T>(x: SubscribableQuery<T> | (() => SubscribableQuery<T>)): x is SubscribableQuery<T> {
+function isQuery<T>(
+  x: SubscribableQuery<T> | (() => SubscribableQuery<T>),
+): x is SubscribableQuery<T> {
   // SubscribableQuery is callable AND has a `.subscribe` method. A getter
   // returning a query is callable but has no `.subscribe` of its own.
   return typeof (x as { subscribe?: unknown }).subscribe === "function";
@@ -14,6 +16,8 @@ function isQuery<T>(x: SubscribableQuery<T> | (() => SubscribableQuery<T>)): x i
  * whose args may change). The ref updates on every query change; the
  * subscription is torn down on component unmount.
  */
+export function useStrataQuery<T>(source: SubscribableQuery<T>): Readonly<Ref<T>>;
+export function useStrataQuery<T>(source: () => SubscribableQuery<T>): Readonly<Ref<T>>;
 export function useStrataQuery<T>(
   source: SubscribableQuery<T> | (() => SubscribableQuery<T>),
 ): Readonly<Ref<T>> {

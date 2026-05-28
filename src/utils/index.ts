@@ -20,10 +20,8 @@ function normalisePadding(value: PaddingValue): {
   bottom: number;
   left: number;
 } {
-  if (typeof value === "number")
-    return { top: value, right: value, bottom: value, left: value };
-  if ("x" in value)
-    return { top: value.y, right: value.x, bottom: value.y, left: value.x };
+  if (typeof value === "number") return { top: value, right: value, bottom: value, left: value };
+  if ("x" in value) return { top: value.y, right: value.x, bottom: value.y, left: value.x };
   return value;
 }
 

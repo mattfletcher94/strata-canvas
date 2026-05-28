@@ -20,10 +20,7 @@ export const passthroughsStore = defineStore({
     regions: {} as Record<string, PassthroughRow>,
   },
   projections: {
-    passthroughRegistered: (
-      state,
-      { id, config }: { id: string; config: PassthroughConfig },
-    ) => ({
+    passthroughRegistered: (state, { id, config }: { id: string; config: PassthroughConfig }) => ({
       ...state,
       regions: { ...state.regions, [id]: { id, ...config } },
     }),

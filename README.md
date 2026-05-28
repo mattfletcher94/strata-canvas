@@ -77,14 +77,14 @@ The Vue layer is a thin adapter. All state flows through Strata; gestures, anima
 
 ## Core primitives
 
-| Component | Purpose |
-|---|---|
-| `<Canvas.Root>` | Viewport. Provides context. Owns pan/zoom transform. |
-| `<Canvas.Panel>` | A node. `v-model="{x,y,width,height}"`. Recursively nestable. `:fixed` pins to screen space. |
-| `<Canvas.DragHandle>` | Opt-in drag region. Presence enables drag. |
-| `<Canvas.ResizeHandleN/E/S/W/NE/NW/SE/SW>` | Per-position resize handles. Presence enables resize from that edge/corner. |
-| `<Canvas.PassThrough>` | Opaque region for third-party content (yFiles, Monaco). Canvas controls back off inside. |
-| `<Canvas.Background>` | Slot wrapper for grids/dots/custom backgrounds. |
+| Component                                  | Purpose                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `<Canvas.Root>`                            | Viewport. Provides context. Owns pan/zoom transform.                                         |
+| `<Canvas.Panel>`                           | A node. `v-model="{x,y,width,height}"`. Recursively nestable. `:fixed` pins to screen space. |
+| `<Canvas.DragHandle>`                      | Opt-in drag region. Presence enables drag.                                                   |
+| `<Canvas.ResizeHandleN/E/S/W/NE/NW/SE/SW>` | Per-position resize handles. Presence enables resize from that edge/corner.                  |
+| `<Canvas.PassThrough>`                     | Opaque region for third-party content (yFiles, Monaco). Canvas controls back off inside.     |
+| `<Canvas.Background>`                      | Slot wrapper for grids/dots/custom backgrounds.                                              |
 
 Every primitive supports `as` (different element) and `as-child` (merge into existing child element).
 
@@ -95,8 +95,8 @@ Every primitive supports `as` (different element) and `as-child` (merge into exi
 ```ts
 import { useCanvas, usePanel } from "@mattfletcher94/strata-canvas";
 
-const canvas = useCanvas();   // anywhere under <Canvas.Root>
-const panel  = usePanel();    // anywhere under <Canvas.Panel> (nearest ancestor)
+const canvas = useCanvas(); // anywhere under <Canvas.Root>
+const panel = usePanel(); // anywhere under <Canvas.Panel> (nearest ancestor)
 ```
 
 Or capture the canvas context from outside via a template ref:
@@ -105,7 +105,7 @@ Or capture the canvas context from outside via a template ref:
 <Canvas.Root ref="canvasRef">…</Canvas.Root>
 
 <script setup>
-const canvasRef = useTemplateRef<{ canvas: CanvasContext }>("canvasRef");
+const canvasRef = useTemplateRef < { canvas: CanvasContext } > "canvasRef";
 canvasRef.value?.canvas.fitTo("all", { duration: 400 });
 </script>
 ```
@@ -117,8 +117,13 @@ canvasRef.value?.canvas.fitTo("all", { duration: 400 });
 Constraints are pure functions: `(proposed: Box, ctx: ResolveCtx) => Box`. They compose left-to-right via `compose(...)`.
 
 ```ts
-import { compose, restrictToParent, withPadding, snapToGrid, avoidSiblings }
-  from "@mattfletcher94/strata-canvas/constraints";
+import {
+  compose,
+  restrictToParent,
+  withPadding,
+  snapToGrid,
+  avoidSiblings,
+} from "@mattfletcher94/strata-canvas/constraints";
 
 const sticky = compose(restrictToParent, withPadding(10), snapToGrid(8));
 ```
@@ -128,6 +133,7 @@ const sticky = compose(restrictToParent, withPadding(10), snapToGrid(8));
 ```
 
 Built-ins:
+
 - **Containment**: `restrictToParent`, `restrictToViewport`, `restrictToRect(rect)`, `restrictSizeToParent`
 - **Axes / size**: `lockAxis('x'|'y')`, `withMinSize({width, height})`, `withMaxSize(…)`, `withAspectRatio(ratio | 'lock')`
 - **Grid**: `snapToGrid(n | {x, y})`
@@ -145,7 +151,7 @@ const dontCrossDiagonal: ResolveFn = (proposed, ctx) =>
 
 ## Controls (`/controls`)
 
-Pan, zoom, marquee select — all composable `Control` objects passed to `<Canvas.Root>`. Default gestures (Figma/Miro convention) ship via `defaultControls()`:
+Pan, zoom, select — all composable `Control` objects passed to `<Canvas.Root>`. Default gestures (Figma/Miro convention) ship via `defaultControls()`:
 
 ```ts
 import { defaultControls, wheelZoom, pan }
@@ -220,6 +226,7 @@ import { easings, cubicBezier } from "@mattfletcher94/strata-canvas/easing";
 ```
 
 When `fixed=true`:
+
 - Panel teleports to a screen-coord overlay layer (no transform applies)
 - `{x, y, width, height}` are screen pixels relative to the canvas root
 - Drag math is 1:1 with cursor at any zoom level
@@ -294,7 +301,7 @@ defineProps<{ panel: PanelData }>();
 
 ## Reactivity & auto re-clamp
 
-Any change to consumer state — `v-model`, parent state, viewport, constraint props — automatically re-runs the constraint pipeline. A panel pinned to a bottom-left corner that grows in height naturally moves *up* to stay inside parent. No manual sync code needed.
+Any change to consumer state — `v-model`, parent state, viewport, constraint props — automatically re-runs the constraint pipeline. A panel pinned to a bottom-left corner that grows in height naturally moves _up_ to stay inside parent. No manual sync code needed.
 
 For constraints that depend on non-Vue state (e.g., a custom `:resolve` closure over a `let` variable), trigger a manual re-check:
 
@@ -309,6 +316,8 @@ The library never measures DOM — content size is the consumer's responsibility
 
 ## Selection
 
+Selection is an ordered array of panel ids, bindable with `v-model:selection`:
+
 ```vue
 <Canvas.Root v-model:selection="selectedIds">…</Canvas.Root>
 
@@ -317,7 +326,48 @@ const selectedIds = ref<readonly string[]>([]);
 </script>
 ```
 
-Selection is an array of panel ids. Driven by canvas controls (e.g., click-to-select), modifiable via `canvas.select(id)` / `clearSelection()` / `setSelection([...])`.
+**Click to select** works out of the box — the `select()` control ships in `defaultControls()`. Clicking a panel selects it; holding the additive modifier (default <kbd>Shift</kbd>) toggles it in/out of a multi-selection. The modifier is configured the same way as any other control:
+
+```ts
+import { defaultControls, select, clearSelectionOnBackground }
+  from "@mattfletcher94/strata-canvas/controls";
+
+<Canvas.Root :controls="[
+  ...defaultControls(),                 // includes select({ additive: ['shift'] })
+  clearSelectionOnBackground(),         // click empty canvas → clear selection
+]">
+
+// override the modifier, opt out, or change button:
+select({ additive: ['meta'] })
+```
+
+Grabbing a panel selects it before the drag starts. Grabbing one panel of a multi-selection keeps the whole selection — so **dragging moves the entire group** (a selected panel nested inside another selected panel rides along instead of double-moving). Resize stays single-panel.
+
+A panel knows its own state — via the `data-selected` attribute, the `isSelected` slot prop, or `usePanel().isSelected`. A common pattern is showing resize handles only when selected:
+
+```vue
+<Canvas.Panel v-model="box" v-slot="{ isSelected }">
+  <Canvas.DragHandle>drag</Canvas.DragHandle>
+  <template v-if="isSelected">
+    <Canvas.ResizeHandleSE />
+  </template>
+</Canvas.Panel>
+```
+
+Selected panels get a default outline you can restyle or remove with CSS variables:
+
+```css
+:root {
+  --strata-selection-outline: 2px solid #3b82f6; /* default */
+  --strata-selection-outline-offset: 2px; /* default */
+}
+/* opt out entirely and style [data-selected] yourself: */
+.my-canvas {
+  --strata-selection-outline: none;
+}
+```
+
+Imperative API: `canvas.select(id, { additive })` / `deselect(id)` / `clearSelection()` / `setSelection([...])`. Need a custom "click empty space" behaviour beyond clearing selection? Use `onBackgroundPointerDown(cb)` — it fires `{ screen, world, originalEvent }` only when the pointer misses every panel.
 
 ---
 
@@ -326,11 +376,10 @@ Selection is an array of panel ids. Driven by canvas controls (e.g., click-to-se
 State is the consumer's. Watch what you care about and persist however you want:
 
 ```ts
-watchDebounced(
-  () => panels.value.map(p => ({ id: p.id, ...p })),
-  save,
-  { debounce: 500, deep: true },
-);
+watchDebounced(() => panels.value.map((p) => ({ id: p.id, ...p })), save, {
+  debounce: 500,
+  deep: true,
+});
 ```
 
 No library-side `exportJSON` or hidden state to extract — your `ref` IS the source of truth.
@@ -340,11 +389,11 @@ No library-side `exportJSON` or hidden state to extract — your `ref` IS the so
 ## Subpath exports
 
 ```ts
-import { /* core */ } from "@mattfletcher94/strata-canvas";
-import { /* … */ }    from "@mattfletcher94/strata-canvas/constraints";
-import { /* … */ }    from "@mattfletcher94/strata-canvas/controls";
-import { /* … */ }    from "@mattfletcher94/strata-canvas/easing";
-import { /* … */ }    from "@mattfletcher94/strata-canvas/utils"; // pure geometry helpers
+import {} from /* core */ "@mattfletcher94/strata-canvas";
+import {} from /* … */ "@mattfletcher94/strata-canvas/constraints";
+import {} from /* … */ "@mattfletcher94/strata-canvas/controls";
+import {} from /* … */ "@mattfletcher94/strata-canvas/easing";
+import {} from /* … */ "@mattfletcher94/strata-canvas/utils"; // pure geometry helpers
 ```
 
 ---

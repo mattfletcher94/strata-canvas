@@ -49,7 +49,7 @@ This document describes the internal architecture of `@mattfletcher94/strata-can
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**The boundary rule:** anything involving a *consumer function* (`bounds: (ctx) => Rect`, `resolve: (proposed, ctx) => Box`) lives in the Vue layer. The Strata graph never holds, calls, or references consumer functions.
+**The boundary rule:** anything involving a _consumer function_ (`bounds: (ctx) => Rect`, `resolve: (proposed, ctx) => Box`) lives in the Vue layer. The Strata graph never holds, calls, or references consumer functions.
 
 This is non-negotiable. Strata explicitly forbids storing functions in store state (`structuredClone` on initial state). Even setting that aside, putting consumer-defined logic inside the graph would force the graph to know about Vue prop reactivity, which couples the wrong layers.
 
@@ -57,9 +57,10 @@ This is non-negotiable. Strata explicitly forbids storing functions in store sta
 
 ## 2. Where the constraint pipeline runs
 
-The pipeline (proposed Box → bounds clamp → resolve fn → committed Box) runs **inside `<Canvas.Panel>`** as a Vue effect. The graph dispatches *raw proposed boxes* (computed from pointer delta + current panel state); the Vue panel applies the consumer's constraints and dispatches the committed box back.
+The pipeline (proposed Box → bounds clamp → resolve fn → committed Box) runs **inside `<Canvas.Panel>`** as a Vue effect. The graph dispatches _raw proposed boxes_ (computed from pointer delta + current panel state); the Vue panel applies the consumer's constraints and dispatches the committed box back.
 
 Why this is correct:
+
 - The consumer's `bounds` and `resolve` are Vue props. They live in Vue's reactivity system.
 - The constraint pipeline depends on those props plus the live state of the parent panel, siblings, viewport — all readable from Vue (via graph queries).
 - Vue's reactive effect re-runs automatically when any input changes — no manual `enforceConsistency` reaction is needed.
@@ -146,7 +147,7 @@ queries:
   worldPosition(id)   : () => Point                  // walks parent chain
 ```
 
-**Key constraint:** `PanelRow` is *geometric only*. No `props`, no `resolve`, no `bounds`, no functions. Those live in the Vue panel component.
+**Key constraint:** `PanelRow` is _geometric only_. No `props`, no `resolve`, no `bounds`, no functions. Those live in the Vue panel component.
 
 ### 3.3 `gestures`
 
@@ -245,7 +246,7 @@ interface PassthroughRow {
   readonly wheel: boolean;
   readonly drag: boolean;
   readonly select: boolean;
-  readonly element: WeakRef<HTMLElement>;     // intentionally NOT in store state — see below
+  readonly element: WeakRef<HTMLElement>; // intentionally NOT in store state — see below
 }
 ```
 
@@ -290,13 +291,16 @@ interface PointerService {
    * Subscribe to pointer + keyboard events. Returns a teardown.
    * Move events are rAF-coalesced — at most one per frame.
    */
-  subscribe(handlers: {
-    onMove?:   (e: { pointer: Point; modifiers: KeyboardModifiers; native: PointerEvent }) => void;
-    onUp?:     (e: { pointer: Point; native: PointerEvent }) => void;
-    onCancel?: (e: { native: PointerEvent }) => void;
-    onKeyDown?: (e: { key: string; modifiers: KeyboardModifiers }) => void;
-    onKeyUp?:   (e: { key: string; modifiers: KeyboardModifiers }) => void;
-  }, signal?: AbortSignal): () => void;
+  subscribe(
+    handlers: {
+      onMove?: (e: { pointer: Point; modifiers: KeyboardModifiers; native: PointerEvent }) => void;
+      onUp?: (e: { pointer: Point; native: PointerEvent }) => void;
+      onCancel?: (e: { native: PointerEvent }) => void;
+      onKeyDown?: (e: { key: string; modifiers: KeyboardModifiers }) => void;
+      onKeyUp?: (e: { key: string; modifiers: KeyboardModifiers }) => void;
+    },
+    signal?: AbortSignal,
+  ): () => void;
 
   /** Read the current pointer position (last known). */
   current(): { pointer: Point; modifiers: KeyboardModifiers } | null;
@@ -408,7 +412,7 @@ reactions:
                   on up, dispatches selection.selectionSet with intersecting panel ids
 ```
 
-The reactions are *long-lived during a gesture*. They use the pointer service's `subscribe` to listen, and they dispatch follow-up events via `onSuccess`/`onFailure` — or more idiomatically, they return events directly inside the run callback's `ctx.on()` handler (when treating pointer as a live source).
+The reactions are _long-lived during a gesture_. They use the pointer service's `subscribe` to listen, and they dispatch follow-up events via `onSuccess`/`onFailure` — or more idiomatically, they return events directly inside the run callback's `ctx.on()` handler (when treating pointer as a live source).
 
 **Concurrency:** `switch` for each gesture type, so a fresh `beginDrag` aborts a stuck one. Different gesture types are independent (drag + pan can't coexist anyway because pan requires modifier-held).
 
@@ -525,20 +529,20 @@ This factory is **internal**. It's never exported from the public package. The p
 
 ### 7.1 The boundary
 
-| Concern | Where it lives |
-|---|---|
-| Geometric state (position, size, parent/child tree) | Graph (registry store) |
-| Active gesture state machine | Graph (gestures store) |
-| Pointer event ingestion | Graph (pointer service + gesture orchestrator) |
-| Raw proposed-box computation (pointer delta + handle math) | Graph (gesture orchestrator) |
-| Viewport state + pan/zoom | Graph (viewport store) |
-| Selection state | Graph (selection store) |
-| Passthrough configs by id | Graph (passthroughs store) |
-| Consumer's `bounds` and `resolve` functions | Vue (panel component props) |
-| Constraint pipeline (apply bounds + resolve to raw proposed) | Vue (panel component effect) |
-| Reactive consistency (parent change → child re-clamp) | Vue (panel component watcher) |
-| DOM ↔ passthrough-id mapping | Vue (passthrough component, via `data-*` attr) |
-| `v-model` sync between consumer ref and graph state | Vue (panel component watchers) |
+| Concern                                                      | Where it lives                                 |
+| ------------------------------------------------------------ | ---------------------------------------------- |
+| Geometric state (position, size, parent/child tree)          | Graph (registry store)                         |
+| Active gesture state machine                                 | Graph (gestures store)                         |
+| Pointer event ingestion                                      | Graph (pointer service + gesture orchestrator) |
+| Raw proposed-box computation (pointer delta + handle math)   | Graph (gesture orchestrator)                   |
+| Viewport state + pan/zoom                                    | Graph (viewport store)                         |
+| Selection state                                              | Graph (selection store)                        |
+| Passthrough configs by id                                    | Graph (passthroughs store)                     |
+| Consumer's `bounds` and `resolve` functions                  | Vue (panel component props)                    |
+| Constraint pipeline (apply bounds + resolve to raw proposed) | Vue (panel component effect)                   |
+| Reactive consistency (parent change → child re-clamp)        | Vue (panel component watcher)                  |
+| DOM ↔ passthrough-id mapping                                 | Vue (passthrough component, via `data-*` attr) |
+| `v-model` sync between consumer ref and graph state          | Vue (panel component watchers)                 |
 
 ### 7.2 Canvas.Root setup
 
@@ -671,8 +675,9 @@ providePanelContext(panelContext)
 ```
 
 Key points:
+
 - The graph stores raw geometric state only
-- The constraint pipeline is a *Vue effect*, parameterized by Vue props
+- The constraint pipeline is a _Vue effect_, parameterized by Vue props
 - Reactive consistency cascades naturally: when a parent's state updates in the graph, the child panel's watcher fires (because parent state is a reactive query bridge), re-runs the pipeline, dispatches a commit if needed
 - v-model bidirectional sync uses shallow-equal guards to prevent loops
 
@@ -680,16 +685,16 @@ Key points:
 
 ```ts
 // src/internal/pipeline.ts
-import type { Box, Rect, ResolveCtx, ResolveFn, BoundsFn } from "@/types"
-import { clampBox } from "@/utils"
+import type { Box, Rect, ResolveCtx, ResolveFn, BoundsFn } from "@/types";
+import { clampBox } from "@/utils";
 
-export type BoundsValue = Rect | { value: Rect } /* Ref<Rect> */ | BoundsFn
+export type BoundsValue = Rect | { value: Rect } /* Ref<Rect> */ | BoundsFn;
 
 export function resolveBoundsValue(value: BoundsValue | undefined, ctx: ResolveCtx): Rect | null {
-  if (!value) return null
-  if (typeof value === "function") return value(ctx)
-  if ("minX" in value) return value
-  return value.value
+  if (!value) return null;
+  if (typeof value === "function") return value(ctx);
+  if ("minX" in value) return value;
+  return value.value;
 }
 ```
 
@@ -778,11 +783,11 @@ The `runPipeline(proposed, props, ctx)` helper in the Vue layer is a pure functi
 
 ```ts
 const result = runPipeline(
-  { x: 150, y: 0, width: 50, height: 50 },   // proposed
+  { x: 150, y: 0, width: 50, height: 50 }, // proposed
   { bounds: { minX: 0, minY: 0, maxX: 100, maxY: 100 } },
   fakeCtx(),
-)
-expect(result.x).toBe(50)
+);
+expect(result.x).toBe(50);
 ```
 
 No Vue, no graph.
@@ -792,14 +797,14 @@ No Vue, no graph.
 Mount `<Canvas.Root>` + `<Canvas.Panel>` against happy-dom, simulate pointer events, assert v-model mutates:
 
 ```ts
-const panel = ref({ x: 0, y: 0, width: 100, height: 100 })
-const wrapper = mount(TestHost, { props: { panel } })
-const handle = wrapper.find("[data-canvas-drag-handle]")
-await handle.trigger("pointerdown", { clientX: 0, clientY: 0 })
-window.dispatchEvent(new PointerEvent("pointermove", { clientX: 50, clientY: 30 }))
-window.dispatchEvent(new PointerEvent("pointerup"))
-await nextTick()
-expect(panel.value.x).toBe(50)
+const panel = ref({ x: 0, y: 0, width: 100, height: 100 });
+const wrapper = mount(TestHost, { props: { panel } });
+const handle = wrapper.find("[data-canvas-drag-handle]");
+await handle.trigger("pointerdown", { clientX: 0, clientY: 0 });
+window.dispatchEvent(new PointerEvent("pointermove", { clientX: 50, clientY: 30 }));
+window.dispatchEvent(new PointerEvent("pointerup"));
+await nextTick();
+expect(panel.value.x).toBe(50);
 ```
 
 This verifies the entire Vue ↔ graph wiring including the pipeline.
@@ -810,32 +815,32 @@ This verifies the entire Vue ↔ graph wiring including the pipeline.
 
 Cross-check against the Strata protocol:
 
-| Rule | How we comply |
-|---|---|
-| Only events change state (via projections) | All store mutations flow through projections dispatched from commands |
-| Commands are pure synchronous | All commands return `{ events }`, never await, never call services |
-| Services contain all I/O | `pointer` service is the only I/O |
-| Reactions handle async work + I/O | `runDrag`/`runResize`/`runPan`/`runBoxSelect` are the only async logic |
-| Past-tense projection names | `panelMounted`, `dragBegun`, `viewportZoomed`, etc. |
-| Action-noun reaction names | `runDrag`, `runResize`, `runPan`, `runBoxSelect` |
-| Queries are pure derivations | All queries read state, no side effects |
-| No functions/instances/Promises in state | `PanelRow` is geometric only; functions live Vue-side |
-| Optimistic mutations use overlays | (Not directly applicable; we don't have async server mutations) |
-| Loading state as projections | Gesture state machine (`activeDrag` etc.) is projection-driven |
-| No services in commands | Verified — services only in reactions |
-| No state in orchestrators | All state in stores |
-| Live queries for long-running streams | Could use one for the pointer subscription per gesture; currently use a reaction with `services.pointer.subscribe(...)` inside the run handler, which is the equivalent pattern |
-| `$dispose` is async | `<Canvas.Root>` calls `graph.$dispose({ timeout: 100 })` on unmount |
+| Rule                                       | How we comply                                                                                                                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Only events change state (via projections) | All store mutations flow through projections dispatched from commands                                                                                                           |
+| Commands are pure synchronous              | All commands return `{ events }`, never await, never call services                                                                                                              |
+| Services contain all I/O                   | `pointer` service is the only I/O                                                                                                                                               |
+| Reactions handle async work + I/O          | `runDrag`/`runResize`/`runPan`/`runBoxSelect` are the only async logic                                                                                                          |
+| Past-tense projection names                | `panelMounted`, `dragBegun`, `viewportZoomed`, etc.                                                                                                                             |
+| Action-noun reaction names                 | `runDrag`, `runResize`, `runPan`, `runBoxSelect`                                                                                                                                |
+| Queries are pure derivations               | All queries read state, no side effects                                                                                                                                         |
+| No functions/instances/Promises in state   | `PanelRow` is geometric only; functions live Vue-side                                                                                                                           |
+| Optimistic mutations use overlays          | (Not directly applicable; we don't have async server mutations)                                                                                                                 |
+| Loading state as projections               | Gesture state machine (`activeDrag` etc.) is projection-driven                                                                                                                  |
+| No services in commands                    | Verified — services only in reactions                                                                                                                                           |
+| No state in orchestrators                  | All state in stores                                                                                                                                                             |
+| Live queries for long-running streams      | Could use one for the pointer subscription per gesture; currently use a reaction with `services.pointer.subscribe(...)` inside the run handler, which is the equivalent pattern |
+| `$dispose` is async                        | `<Canvas.Root>` calls `graph.$dispose({ timeout: 100 })` on unmount                                                                                                             |
 
 The Vue integration layer:
 
-| Concern | Pattern |
-|---|---|
-| Function-bearing constraint props | Stay in Vue props; never enter the graph |
-| Pipeline computation | Vue effect (`watch`) reading both graph queries and Vue props |
-| Reactive consistency | Vue watcher on parent state cascades through component tree |
-| v-model bidirectional sync | Shallow-equal-guarded watchers in both directions |
-| Compound primitives + as / as-child | Reka pattern via copied `Primitive` + `createContext` |
+| Concern                             | Pattern                                                       |
+| ----------------------------------- | ------------------------------------------------------------- |
+| Function-bearing constraint props   | Stay in Vue props; never enter the graph                      |
+| Pipeline computation                | Vue effect (`watch`) reading both graph queries and Vue props |
+| Reactive consistency                | Vue watcher on parent state cascades through component tree   |
+| v-model bidirectional sync          | Shallow-equal-guarded watchers in both directions             |
+| Compound primitives + as / as-child | Reka pattern via copied `Primitive` + `createContext`         |
 
 This is the most "Strata-pure" partition I can construct given the hard rule against functions in state. The graph handles everything Strata is good at (state machines, event coordination, I/O orchestration); Vue handles everything that requires consumer-provided logic (constraint application).
 

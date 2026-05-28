@@ -7,12 +7,21 @@ import {
   restrictToParent,
   withPadding,
 } from "@mattfletcher94/strata-canvas/constraints";
+import {
+  clearSelectionOnBackground,
+  defaultControls,
+} from "@mattfletcher94/strata-canvas/controls";
 
 const Canvas = createCanvas();
 
 const canvasRef = useTemplateRef<{ canvas: ReturnType<typeof Canvas.useCanvas> }>("canvasRef");
 
 const viewport = ref({ x: 0, y: 0, zoom: 1 });
+const selectedIds = ref<readonly string[]>([]);
+
+// Click empty canvas to clear selection. select() is already in defaultControls,
+// so click-to-select / shift-to-multi works without extra wiring.
+const controls = [...defaultControls(), clearSelectionOnBackground()];
 
 const parent = ref({ x: 100, y: 100, width: 400, height: 300 });
 const childA = ref({ x: 20, y: 40, width: 120, height: 80 });
@@ -71,11 +80,17 @@ function resetView() {
     <Canvas.Root
       ref="canvasRef"
       v-model:viewport="viewport"
+      v-model:selection="selectedIds"
+      :controls="controls"
       class="canvas"
     >
       <Canvas.Panel
         v-model="parent"
-        :style="{ background: '#3a3a3a', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }"
+        :style="{
+          background: '#3a3a3a',
+          borderRadius: '6px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        }"
       >
         <Canvas.DragHandle class="title-bar">parent — drag me</Canvas.DragHandle>
 
@@ -98,12 +113,10 @@ function resetView() {
           :style="{ background: '#ff8a5a', borderRadius: '4px', overflow: 'hidden' }"
         >
           <Canvas.DragHandle class="mini-title">B — type below to grow</Canvas.DragHandle>
-          <div
-            ref="editableEl"
-            contenteditable
-            class="editable canvas-nokey"
-            spellcheck="false"
-          >Type or paste more text here. The panel grows in height and sticks to parent's bottom-left.</div>
+          <div ref="editableEl" contenteditable class="editable canvas-nokey" spellcheck="false">
+            Type or paste more text here. The panel grows in height and sticks to parent's
+            bottom-left.
+          </div>
           <Canvas.ResizeHandleSE />
         </Canvas.Panel>
 
@@ -120,10 +133,15 @@ function resetView() {
       <Canvas.Panel
         v-model="pinned"
         fixed
-        :style="{ background: '#2a4a6a', color: '#eee', borderRadius: '6px', border: '1px solid #4a6a8a' }"
+        :style="{
+          background: '#2a4a6a',
+          color: '#eee',
+          borderRadius: '6px',
+          border: '1px solid #4a6a8a',
+        }"
       >
         <Canvas.DragHandle class="mini-title">PINNED — screen space, drag me</Canvas.DragHandle>
-        <div style="padding: 32px 10px 10px; font-size: 12px; line-height: 1.5;">
+        <div style="padding: 32px 10px 10px; font-size: 12px; line-height: 1.5">
           I don't pan or zoom with the canvas. Try Ctrl+wheel or middle-drag — I stay put.
         </div>
         <Canvas.ResizeHandleSE />
@@ -131,13 +149,18 @@ function resetView() {
 
       <Canvas.Panel
         v-model="standalone"
+        v-slot="{ isSelected }"
         :style="{ background: '#7eff7e', color: '#1a1a1a', borderRadius: '6px' }"
       >
-        <Canvas.DragHandle class="content-pad-lg">standalone — no parent constraints</Canvas.DragHandle>
-        <Canvas.ResizeHandleSE />
-        <Canvas.ResizeHandleSW />
-        <Canvas.ResizeHandleNE />
-        <Canvas.ResizeHandleNW />
+        <Canvas.DragHandle class="content-pad-lg"
+          >standalone — handles show when selected</Canvas.DragHandle
+        >
+        <template v-if="isSelected">
+          <Canvas.ResizeHandleSE />
+          <Canvas.ResizeHandleSW />
+          <Canvas.ResizeHandleNE />
+          <Canvas.ResizeHandleNW />
+        </template>
       </Canvas.Panel>
     </Canvas.Root>
 
@@ -146,17 +169,22 @@ function resetView() {
       <button class="btn" @click="resetView">Reset view (0,0,1)</button>
     </div>
 
-    <pre class="overlay overlay-bottom-right debug">viewport:   {{ roundAll(viewport) }}
+    <pre class="overlay overlay-bottom-right debug">
+viewport:   {{ roundAll(viewport) }}
 parent:     {{ roundAll(parent) }}
 childA:     {{ roundAll(childA) }}
 childB:     {{ roundAll(childB) }}
 childC:     {{ roundAll(childC) }}
-standalone: {{ roundAll(standalone) }}</pre>
+standalone: {{ roundAll(standalone) }}
+selected:   {{ selectedIds.length }} panel(s)</pre
+    >
 
     <div class="overlay overlay-top-left hint">
       <strong>Controls:</strong><br />
       Ctrl+wheel: zoom &nbsp;·&nbsp; Middle drag: pan<br />
-      Space+drag: pan &nbsp;·&nbsp; Drag corners: resize
+      Space+drag: pan &nbsp;·&nbsp; Drag corners: resize<br />
+      Click: select &nbsp;·&nbsp; Shift+click: multi/toggle<br />
+      Click empty: clear &nbsp;·&nbsp; Drag multi-selection: group move
     </div>
   </div>
 </template>
@@ -177,9 +205,22 @@ standalone: {{ roundAll(standalone) }}</pre>
   position: absolute;
   z-index: 100;
 }
-.overlay-bottom-left { bottom: 12px; left: 12px; display: flex; gap: 8px; }
-.overlay-bottom-right { bottom: 12px; right: 12px; pointer-events: none; }
-.overlay-top-left { top: 12px; left: 12px; pointer-events: none; }
+.overlay-bottom-left {
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 8px;
+}
+.overlay-bottom-right {
+  bottom: 12px;
+  right: 12px;
+  pointer-events: none;
+}
+.overlay-top-left {
+  top: 12px;
+  left: 12px;
+  pointer-events: none;
+}
 .btn {
   padding: 6px 12px;
   background: #3a3a3a;
@@ -189,7 +230,9 @@ standalone: {{ roundAll(standalone) }}</pre>
   cursor: pointer;
   font-family: inherit;
 }
-.btn:hover { background: #4a4a4a; }
+.btn:hover {
+  background: #4a4a4a;
+}
 .debug {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
@@ -209,7 +252,9 @@ standalone: {{ roundAll(standalone) }}</pre>
 }
 .title-bar {
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 28px;
   background: #4a4a4a;
   border-radius: 6px 6px 0 0;
@@ -218,10 +263,16 @@ standalone: {{ roundAll(standalone) }}</pre>
   align-items: center;
   font-size: 12px;
 }
-.content-pad { position: absolute; inset: 0; padding: 8px; }
+.content-pad {
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+}
 .mini-title {
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 24px;
   padding: 0 6px;
   display: flex;
@@ -234,7 +285,9 @@ standalone: {{ roundAll(standalone) }}</pre>
 }
 .editable {
   position: absolute;
-  top: 24px; left: 0; right: 0;
+  top: 24px;
+  left: 0;
+  right: 0;
   padding: 6px 8px;
   font-size: 12px;
   line-height: 1.4;
@@ -244,6 +297,12 @@ standalone: {{ roundAll(standalone) }}</pre>
   white-space: pre-wrap;
   word-wrap: break-word;
 }
-.editable:focus { background: rgba(255, 255, 255, 0.15); }
-.content-pad-lg { position: absolute; inset: 0; padding: 12px; }
+.editable:focus {
+  background: rgba(255, 255, 255, 0.15);
+}
+.content-pad-lg {
+  position: absolute;
+  inset: 0;
+  padding: 12px;
+}
 </style>

@@ -7,12 +7,12 @@ export const selectionStore = defineStore({
     selected: [] as readonly string[],
   },
   projections: {
-    panelSelected: (
-      state,
-      { id, additive }: { id: string; additive: boolean },
-    ) => {
+    panelSelected: (state, { id, additive }: { id: string; additive: boolean }) => {
       if (additive) {
-        if (state.selected.includes(id)) return state;
+        // Additive click toggles: add if absent, remove if already present.
+        if (state.selected.includes(id)) {
+          return { ...state, selected: state.selected.filter((x) => x !== id) };
+        }
         return { ...state, selected: [...state.selected, id] };
       }
       if (state.selected.length === 1 && state.selected[0] === id) return state;
@@ -22,12 +22,13 @@ export const selectionStore = defineStore({
       if (!state.selected.includes(id)) return state;
       return { ...state, selected: state.selected.filter((x) => x !== id) };
     },
-    selectionSet: (state, { ids }: { ids: readonly string[] }) => ({
-      ...state,
-      selected: [...ids],
-    }),
-    selectionCleared: (state) =>
-      state.selected.length === 0 ? state : { ...state, selected: [] },
+    selectionSet: (state, { ids }: { ids: readonly string[] }) => {
+      if (state.selected.length === ids.length && state.selected.every((x, i) => x === ids[i])) {
+        return state;
+      }
+      return { ...state, selected: [...ids] };
+    },
+    selectionCleared: (state) => (state.selected.length === 0 ? state : { ...state, selected: [] }),
   },
   queries: (state) => ({
     selectedIds: () => state.selected,

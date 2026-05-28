@@ -1,14 +1,21 @@
 import { defineStore } from "@mattfletcher94/strata";
 import type { Box, HandlePosition, KeyboardModifiers, Point } from "@/types";
 
+export interface DragMember {
+  readonly startBox: Box;
+  readonly rawProposed: Box;
+}
+
 export interface DragGesture {
   readonly corrId: string;
+  /** The grabbed panel. Always a member unless it rides a selected ancestor. */
   readonly panelId: string;
   readonly startPointer: Point;
   readonly currentPointer: Point;
   readonly modifiers: KeyboardModifiers;
-  readonly startBox: Box;
-  readonly rawProposed: Box;
+  /** Every panel moving in this drag, keyed by id — one entry for a single
+   *  drag, many for a group drag of a multi-selection. */
+  readonly members: Record<string, DragMember>;
 }
 
 export interface ResizeGesture {
@@ -51,11 +58,24 @@ export const gesturesStore = defineStore({
         corrId,
         currentPointer,
         modifiers,
-        rawProposed,
-      }: { corrId: string; currentPointer: Point; modifiers: KeyboardModifiers; rawProposed: Box },
+        proposals,
+      }: {
+        corrId: string;
+        currentPointer: Point;
+        modifiers: KeyboardModifiers;
+        proposals: Record<string, Box>;
+      },
     ) => {
       if (!state.drag || state.drag.corrId !== corrId) return state;
-      return { ...state, drag: { ...state.drag, currentPointer, modifiers, rawProposed } };
+      const members: Record<string, DragMember> = {};
+      for (const id in state.drag.members) {
+        const member = state.drag.members[id];
+        members[id] = {
+          startBox: member.startBox,
+          rawProposed: proposals[id] ?? member.rawProposed,
+        };
+      }
+      return { ...state, drag: { ...state.drag, currentPointer, modifiers, members } };
     },
     dragEnded: (state, { corrId }: { corrId: string }) => {
       if (!state.drag || state.drag.corrId !== corrId) return state;
@@ -105,17 +125,16 @@ export const gesturesStore = defineStore({
     activeDrag: () => state.drag,
     activeResize: () => state.resize,
     activePan: () => state.pan,
-    dragFor: (id: string) => () =>
-      state.drag && state.drag.panelId === id ? state.drag : null,
+    dragFor: (id: string) => () => (state.drag && state.drag.members[id] ? state.drag : null),
     resizeFor: (id: string) => () =>
       state.resize && state.resize.panelId === id ? state.resize : null,
-    isPanelDragging: (id: string) => () => state.drag?.panelId === id,
+    isPanelDragging: (id: string) => () =>
+      state.drag !== null && state.drag.members[id] !== undefined,
     isPanelResizing: (id: string) => () => state.resize?.panelId === id,
-    isAnyGestureActive: () =>
-      state.drag !== null || state.resize !== null || state.pan !== null,
+    isAnyGestureActive: () => state.drag !== null || state.resize !== null || state.pan !== null,
     rawProposedFor: (id: string) => () => {
-      if (state.drag && state.drag.panelId === id) {
-        return { gesture: "drag" as const, raw: state.drag.rawProposed };
+      if (state.drag && state.drag.members[id]) {
+        return { gesture: "drag" as const, raw: state.drag.members[id].rawProposed };
       }
       if (state.resize && state.resize.panelId === id) {
         return {

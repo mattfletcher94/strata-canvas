@@ -33,13 +33,7 @@ export const registryOrch = defineOrchestrator({
       if (!deps.registry.exists(input.id)()) return;
       return { events: [deps.registry.panelUnmounted(input)] };
     },
-    commitPanelState(input: {
-      id: string;
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }) {
+    commitPanelState(input: { id: string; x: number; y: number; width: number; height: number }) {
       if (!deps.registry.exists(input.id)()) return;
       return { events: [deps.registry.panelStateUpdated(input)] };
     },

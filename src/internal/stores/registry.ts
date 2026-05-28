@@ -118,10 +118,7 @@ export const registryStore = defineStore({
         panels: { ...state.panels, [id]: { ...row, x, y, width, height } },
       };
     },
-    panelReparented: (
-      state,
-      { id, newParentId }: { id: string; newParentId: string | null },
-    ) => {
+    panelReparented: (state, { id, newParentId }: { id: string; newParentId: string | null }) => {
       const row = state.panels[id];
       if (!row || row.parentId === newParentId) return state;
       const cleared = removeFromParent(state.childrenByParent, row.parentId, id);

@@ -10,12 +10,7 @@ import {
 } from "@/internal/contexts";
 import { useStrataQuery } from "@/internal/useStrataQuery";
 import { boxEqual } from "@/utils";
-import {
-  type BoundsValue,
-  panelToBox,
-  runPipeline,
-  viewportToRect,
-} from "@/internal/pipeline";
+import { type BoundsValue, panelToBox, runPipeline, viewportToRect } from "@/internal/pipeline";
 import type { ResolveFn } from "@/types";
 
 // Teleport is our template root — disable Vue's auto attribute inheritance
@@ -157,12 +152,7 @@ watch(gestureFrame, (frame) => {
   if (!row) return;
 
   // For fixed panels, parent reference is the viewport (not a panel).
-  const parent =
-    props.fixed
-      ? null
-      : parentId
-        ? graph.registryOrch.byId(parentId)()
-        : null;
+  const parent = props.fixed ? null : parentId ? graph.registryOrch.byId(parentId)() : null;
   const siblings = props.fixed ? [] : graph.registryOrch.siblingsOf(id)();
   const pointer = pointerFromActiveGesture();
   const modifiers = modifiersFromActiveGesture();
@@ -177,8 +167,8 @@ watch(gestureFrame, (frame) => {
     const drag = graph.gestureOrch.activeDrag();
     const resize = graph.gestureOrch.activeResize();
     const startBox =
-      drag && drag.panelId === id
-        ? drag.startBox
+      drag && drag.members[id]
+        ? drag.members[id].startBox
         : resize && resize.panelId === id
           ? resize.startBox
           : null;
@@ -293,7 +283,9 @@ function modifiersFromActiveGesture(): KeyboardModifiers {
 // Panel context for descendants
 const ctx: PanelContext = {
   id,
-  state: computed(() => panelToBox(panelRow.value ?? { id, parentId, x: 0, y: 0, width: 0, height: 0 })),
+  state: computed(() =>
+    panelToBox(panelRow.value ?? { id, parentId, x: 0, y: 0, width: 0, height: 0 }),
+  ),
   worldPosition: computed(() => {
     // Walk ancestor chain
     let row = panelRow.value;
@@ -315,6 +307,15 @@ const ctx: PanelContext = {
   disabled: computed(() => props.disabled),
   beginDrag: (e) => {
     if (props.disabled) return;
+    // Select before dragging. keepExisting=true so grabbing one panel of a
+    // multi-selection drags the whole group rather than collapsing to it.
+    if (props.selectable) {
+      graph.selectionOrch.selectOnPointerDown({
+        id,
+        additive: canvas.isAdditiveSelectEvent(e),
+        keepExisting: true,
+      });
+    }
     graph.gestureOrch.beginDrag({
       panelId: id,
       pointer: { x: e.clientX, y: e.clientY },
@@ -323,6 +324,13 @@ const ctx: PanelContext = {
   },
   beginResize: (e, handle: HandlePosition) => {
     if (props.disabled) return;
+    // Resize is single-panel — collapse selection to the resized panel.
+    if (props.selectable) {
+      graph.selectionOrch.selectOnPointerDown({
+        id,
+        additive: canvas.isAdditiveSelectEvent(e),
+      });
+    }
     graph.gestureOrch.beginResize({
       panelId: id,
       handle,
@@ -357,48 +365,50 @@ const size = computed(() => ({
 }));
 const zValue = computed(() => props.z);
 
-function onPointerDown(e: PointerEvent) {
-  if (!props.selectable) return;
-  if (e.target !== e.currentTarget) return;
-  if (props.disabled) return;
-  ctx.select({ additive: e.shiftKey });
-}
+// Body-click selection is handled by the `select()` control at Root, which
+// hit-tests the innermost panel via DOM containment. Drag/resize handles
+// stopPropagation, so they select via beginDrag/beginResize above instead.
+const selectionOutline = computed(() =>
+  isSelected.value ? "var(--strata-selection-outline, 2px solid #3b82f6)" : undefined,
+);
+const selectionOutlineOffset = computed(() =>
+  isSelected.value ? "var(--strata-selection-outline-offset, 2px)" : undefined,
+);
 </script>
 
 <template>
-  <Teleport
-    :to="canvas.overlayLayer.value"
-    :disabled="!props.fixed || !canvas.overlayLayer.value"
-  >
-  <Primitive
-    v-bind="$attrs"
-    :as="props.as"
-    :as-child="props.asChild"
-    data-canvas-panel
-    :data-panel-id="id"
-    :data-dragging="ctx.isDragging.value || undefined"
-    :data-resizing="ctx.isResizing.value || undefined"
-    :data-selected="ctx.isSelected.value || undefined"
-    :style="{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      transform,
-      width: size.width,
-      height: size.height,
-      zIndex: zValue,
-      touchAction: 'none',
-      pointerEvents: 'auto',
-    }"
-    @pointerdown="onPointerDown"
-  >
-    <slot
-      :id="id"
-      :state="ctx.state.value"
-      :isDragging="ctx.isDragging.value"
-      :isResizing="ctx.isResizing.value"
-      :isSelected="ctx.isSelected.value"
-    />
-  </Primitive>
+  <Teleport :to="canvas.overlayLayer.value" :disabled="!props.fixed || !canvas.overlayLayer.value">
+    <Primitive
+      v-bind="$attrs"
+      :as="props.as"
+      :as-child="props.asChild"
+      data-canvas-panel
+      :data-panel-id="id"
+      :data-selectable="props.selectable ? undefined : 'false'"
+      :data-dragging="ctx.isDragging.value || undefined"
+      :data-resizing="ctx.isResizing.value || undefined"
+      :data-selected="ctx.isSelected.value || undefined"
+      :style="{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        transform,
+        width: size.width,
+        height: size.height,
+        zIndex: zValue,
+        touchAction: 'none',
+        pointerEvents: 'auto',
+        outline: selectionOutline,
+        outlineOffset: selectionOutlineOffset,
+      }"
+    >
+      <slot
+        :id="id"
+        :state="ctx.state.value"
+        :isDragging="ctx.isDragging.value"
+        :isResizing="ctx.isResizing.value"
+        :isSelected="ctx.isSelected.value"
+      />
+    </Primitive>
   </Teleport>
 </template>

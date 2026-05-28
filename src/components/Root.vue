@@ -16,7 +16,10 @@ import {
 import { useStrataQuery } from "@/internal/useStrataQuery";
 import type { ViewportConfig } from "@/internal/stores/viewport";
 import type { Control, ControlContext, PointerSession } from "@/controls/types";
+import { anyModifierHeld } from "@/controls/types";
 import { defaultControls } from "@/controls";
+import type { SelectControl } from "@/controls/select";
+import { nearestPanelEl, nearestPanelId } from "@/controls/hitTest";
 import { resolveEasing } from "@/easing";
 
 interface RootProps {
@@ -105,7 +108,12 @@ function worldToScreen(p: Point): Point {
 // duration, easingTable, startTime). Per-frame dispatch lives here because
 // rAF is browser timing — naturally a UI-layer concern. State stays in strata.
 
-function normalizePadding(p: Padding): { top: number; right: number; bottom: number; left: number } {
+function normalizePadding(p: Padding): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
   if (typeof p === "number") return { top: p, right: p, bottom: p, left: p };
   return p;
 }
@@ -177,7 +185,11 @@ function resolveFitRect(target: FitTarget | undefined): Rect | null {
   return rectFromPanel(t as PanelContext);
 }
 
-function viewportForFit(rect: Rect, padding: Padding, maxZoomOverride: number | undefined): ViewportState | null {
+function viewportForFit(
+  rect: Rect,
+  padding: Padding,
+  maxZoomOverride: number | undefined,
+): ViewportState | null {
   const el = rootEl.value;
   if (!el) return null;
   const p = normalizePadding(padding);
@@ -261,9 +273,7 @@ function animateViewport(
     activeOnAbort = reject;
 
     const externalAbort = options.signal;
-    const externalListener = externalAbort
-      ? () => stopAnimation()
-      : null;
+    const externalListener = externalAbort ? () => stopAnimation() : null;
     if (externalAbort && externalListener) {
       externalAbort.addEventListener("abort", externalListener);
     }
@@ -340,6 +350,10 @@ const ctx: CanvasContext = {
   deselect: (id) => graph.selectionOrch.deselect({ id }),
   clearSelection: () => graph.selectionOrch.clear(),
   setSelection: (ids) => graph.selectionOrch.set({ ids }),
+  isAdditiveSelectEvent: (e) => {
+    const sel = sortedControls.value.find((c) => c.id === "select") as SelectControl | undefined;
+    return anyModifierHeld(e, sel?.additiveModifiers ?? []);
+  },
   markEventAsHandled: (e) => handledEvents.add(e),
   isHandled: (e) => handledEvents.has(e),
   rootElement: rootEl,
@@ -362,6 +376,8 @@ const controlCtx: ControlContext = {
   isKeyHeld: (key) => keysHeld.has(key),
   markHandled: (e) => handledEvents.add(e),
   isHandled: (e) => handledEvents.has(e),
+  panelAt: (e) => nearestPanelId(e),
+  isOnPanel: (e) => nearestPanelEl(e) !== null,
 };
 // rootElement needs to be live-readable; redefine via accessor.
 Object.defineProperty(controlCtx, "rootElement", { get: () => rootEl.value });

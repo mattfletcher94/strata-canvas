@@ -33,10 +33,7 @@ export function pan(options: PanOptions = {}): Control {
       if (e.button !== button) return false;
       if (!allModifiersHeld(e, mods)) return false;
       for (const k of keys) if (!ctx.isKeyHeld(k)) return false;
-      if (onlyBackground) {
-        const target = e.target as Element | null;
-        if (target?.closest("[data-canvas-panel]")) return false;
-      }
+      if (onlyBackground && ctx.isOnPanel(e)) return false;
       e.preventDefault();
       ctx.markHandled(e);
       ctx.graph.gestureOrch.beginPan({ screenPointer: { x: e.clientX, y: e.clientY } });

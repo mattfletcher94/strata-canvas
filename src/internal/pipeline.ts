@@ -1,4 +1,13 @@
-import type { BoundsFn, Box, HandlePosition, KeyboardModifiers, Point, Rect, ResolveCtx, ResolveFn } from "@/types";
+import type {
+  BoundsFn,
+  Box,
+  HandlePosition,
+  KeyboardModifiers,
+  Point,
+  Rect,
+  ResolveCtx,
+  ResolveFn,
+} from "@/types";
 import { boxToRect, clampBox } from "@/utils";
 import type { PanelRow } from "@/internal/stores/registry";
 
@@ -83,11 +92,14 @@ export function panelToBox(row: PanelRow): Box {
 }
 
 /** Compute the viewport rect in world coords given a screen size and the viewport state. */
-export function viewportToRect(viewport: {
-  readonly x: number;
-  readonly y: number;
-  readonly zoom: number;
-}, screen: { readonly width: number; readonly height: number }): Rect {
+export function viewportToRect(
+  viewport: {
+    readonly x: number;
+    readonly y: number;
+    readonly zoom: number;
+  },
+  screen: { readonly width: number; readonly height: number },
+): Rect {
   return {
     minX: -viewport.x / viewport.zoom,
     minY: -viewport.y / viewport.zoom,

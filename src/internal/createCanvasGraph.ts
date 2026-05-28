@@ -20,7 +20,7 @@ export interface CanvasGraphOptions {
   readonly config?: Partial<ViewportConfig>;
 }
 
-type Graph = ResolvedStrata<{
+export type CanvasGraph = ResolvedStrata<{
   stores: {
     viewport: typeof viewportStore;
     registry: typeof registryStore;
@@ -40,7 +40,7 @@ type Graph = ResolvedStrata<{
 }>;
 
 export interface CanvasGraphHandle {
-  readonly graph: Graph;
+  readonly graph: CanvasGraph;
   /** Release long-lived live queries and dispose the graph. Call on Root unmount. */
   dispose(): Promise<void>;
 }

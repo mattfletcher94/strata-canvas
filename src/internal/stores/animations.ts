@@ -37,8 +37,7 @@ export const animationsStore = defineStore({
       state.active?.corrId === corrId ? { ...state, active: null } : state,
     animationCancelled: (state, { corrId }: { corrId: string }) =>
       state.active?.corrId === corrId ? { ...state, active: null } : state,
-    allAnimationsCancelled: (state) =>
-      state.active === null ? state : { ...state, active: null },
+    allAnimationsCancelled: (state) => (state.active === null ? state : { ...state, active: null }),
   },
   queries: (state) => ({
     active: () => state.active,

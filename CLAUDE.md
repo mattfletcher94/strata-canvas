@@ -64,7 +64,7 @@ Strata's philosophy is **predictable state through pure derivation**. Defaulting
 
 ### Commands are pure synchronous functions
 
-Commands receive `(deps)` only — never `(deps, services)`. They cannot call services. They return `{ events?, data?, result? }`. If you need to call a service to *compute* something, dispatch a `xRequested` event and let a reaction call the service and dispatch the follow-up.
+Commands receive `(deps)` only — never `(deps, services)`. They cannot call services. They return `{ events?, data?, result? }`. If you need to call a service to _compute_ something, dispatch a `xRequested` event and let a reaction call the service and dispatch the follow-up.
 
 Awaitable commands declare `result: { ok, fail }`. Awaiting `app.x.cmd(args)` resolves with the matching event payload, correlated automatically by internal corrId.
 
@@ -87,7 +87,7 @@ queries: (state) => ({
 
 ### Cache invalidation → re-dispatch the trigger event
 
-There is no `invalidate` primitive. Calling the fetch command again *is* invalidation (reactions use `switch` concurrency to abort the prior run). Expose `invalidateList()` as a command alias if you want discoverability.
+There is no `invalidate` primitive. Calling the fetch command again _is_ invalidation (reactions use `switch` concurrency to abort the prior run). Expose `invalidateList()` as a command alias if you want discoverability.
 
 ### Awaitable mutations → declare `result`, not `allSettled()`
 
@@ -105,7 +105,7 @@ liveQueries: (deps, services) => ({
         onError: (e) => fail(e),
       }),
   }),
-})
+});
 ```
 
 Identity is `(name, args)` with refcounting; concurrent `acquire()` calls share one underlying source. Source tears down on last release.
@@ -120,7 +120,7 @@ reactions: (deps, services, commands) => ({
     on: commands.create,
     run: (input) => services.analytics.track("create", input),
   }),
-})
+});
 ```
 
 This is how cross-cutting concerns attach without modifying the command.
@@ -173,6 +173,7 @@ Beyond Strata's protocol, this library has its own non-negotiables. They flow fr
 ### Vue ↔ Strata adapter rules
 
 The Vue component layer is **thin**. Components should:
+
 1. Call commands. Never mutate stores directly.
 2. Read state via queries (`useQuery`). Never reach into the graph object.
 3. Hold the graph instance privately on the canvas context (e.g. `_graph` with leading underscore) — never export it as part of the public surface.
@@ -284,13 +285,13 @@ await graph.$dispose()
 Mount `<Canvas.Root>` + `<Canvas.Panel>` against `happy-dom`, dispatch DOM pointer events, assert the consumer's ref mutates correctly. Validates the Vue ↔ Strata adapter wiring.
 
 ```ts
-const panel = ref({ x: 0, y: 0, width: 100, height: 100 })
-const wrapper = mount(TestHost, { props: { panel } })
-const handle = wrapper.find("[data-canvas-drag-handle]")
-await handle.trigger("pointerdown", { clientX: 0, clientY: 0 })
-await window.dispatchEvent(new PointerEvent("pointermove", { clientX: 50, clientY: 30 }))
-await window.dispatchEvent(new PointerEvent("pointerup"))
-expect(panel.value).toEqual({ x: 50, y: 30, width: 100, height: 100 })
+const panel = ref({ x: 0, y: 0, width: 100, height: 100 });
+const wrapper = mount(TestHost, { props: { panel } });
+const handle = wrapper.find("[data-canvas-drag-handle]");
+await handle.trigger("pointerdown", { clientX: 0, clientY: 0 });
+await window.dispatchEvent(new PointerEvent("pointermove", { clientX: 50, clientY: 30 }));
+await window.dispatchEvent(new PointerEvent("pointerup"));
+expect(panel.value).toEqual({ x: 50, y: 30, width: 100, height: 100 });
 ```
 
 ### Test rules

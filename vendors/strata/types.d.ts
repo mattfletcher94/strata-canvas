@@ -306,6 +306,9 @@ export type AsyncFnKeys<T> = {
 export type ResolveDeps<T> = {
     readonly [K in keyof T]: Resolved<T[K]>;
 };
+export type ResolveServices<T> = {
+    readonly [K in keyof T]: Resolved<T[K]>;
+};
 export type StoreQueries<T> = T extends StoreBlueprint<infer R> ? {
     [K in keyof R]: R[K] extends SubscribableQuery<any> | ((...args: any[]) => SubscribableQuery<any>) ? R[K] : never;
 } : never;
@@ -359,6 +362,7 @@ export interface OrchestratorBlueprint<TResolved = any> {
     readonly _name: string;
     readonly _responsibility: string | undefined;
     readonly _deps: Record<string, StoreBlueprint | OrchestratorBlueprint> | undefined;
+    readonly _services: Record<string, ServiceBlueprint> | undefined;
     readonly _queries: ((deps: any) => any) | undefined;
     readonly _commands: ((deps: any) => any) | undefined;
     readonly _reactions: ((deps: any, services: any, commands: any) => any) | undefined;
@@ -384,7 +388,11 @@ export type ResolvedStrata<TConfig> = (TConfig extends {
 } ? {
     readonly [K in keyof O]: Resolved<O[K]>;
 } : unknown) & {
-    readonly $dispose: () => Promise<void>;
+    readonly $dispose: (options?: {
+        timeout?: number;
+        force?: boolean;
+    }) => Promise<void>;
+    readonly $flush: () => Promise<void>;
     readonly $inspectLiveQueries: () => readonly LiveQuerySnapshot[];
     readonly $inspectReactions: () => readonly ReactionSnapshot[];
 };

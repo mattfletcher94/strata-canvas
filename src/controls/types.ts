@@ -11,6 +11,10 @@ export interface ControlContext {
   /** Cooperatively flag an event as handled so other listeners can skip it. */
   markHandled(e: Event): void;
   isHandled(e: Event): boolean;
+  /** Id of the nearest (innermost) panel to the event's target, or null. */
+  panelAt(e: Event): string | null;
+  /** Whether the event landed on a panel (or its chrome / passthrough content). */
+  isOnPanel(e: Event): boolean;
 }
 
 /**
@@ -69,7 +73,7 @@ export interface Control {
  * }
  * ```
  */
-export function defineControl(control: Control): Control {
+export function defineControl<T extends Control>(control: T): T {
   return control;
 }
 
@@ -92,6 +96,19 @@ export function allModifiersHeld(
 ): boolean {
   for (const m of mods) if (!modifierHeld(e, m)) return false;
   return true;
+}
+
+/**
+ * True when *any* of the given modifiers is held. With an empty list, returns
+ * false. Used for additive-selection modifiers where holding any one of the
+ * configured keys (e.g. shift) qualifies.
+ */
+export function anyModifierHeld(
+  e: { ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean },
+  mods: readonly ModifierKey[],
+): boolean {
+  for (const m of mods) if (modifierHeld(e, m)) return true;
+  return false;
 }
 
 export function noOtherModifiers(
